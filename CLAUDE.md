@@ -200,6 +200,8 @@ Located in the output hub, supporting the eccentric shaft's free end via the 5mm
 | Item | Spec | Qty | Purpose |
 |---|---|---|---|
 | Motor mounting bolts | M3 × 10mm socket head (5.3mm head ⌀ × 3mm head height, 13mm total) | 4 | Mount motor to housing (6mm through plate + 4mm thread engagement, head flush in 3mm counterbore on inner face) |
+| Arm-mount bolts | M4 socket head, length per arm link + ~31mm hub (≈M4 × 40–50mm) | 4 | Arm link → output hub; drops through the proud face and threads into a captive M4 nut on the hub inner face |
+| Arm-mount nuts | M4 hex nut | 4 | Captive in the output-hub inner-face hex pockets (7.2mm AF × 4mm); install before pressing hub through 6814 bearings |
 
 ---
 
@@ -221,7 +223,9 @@ Measured from motor mounting face inward:
 
 **Total housing depth: ~65mm** (not including motor body protrusion)
 
-**Total assembly depth including NEMA 17:** ~65mm housing + 48mm motor body = **~113mm** (motor pilot recesses 2mm into the motor plate's outer face — already inside the 65mm housing depth, so it doesn't add or subtract from the total).
+**Output hub protrusion:** the rotating output hub extends **3mm proud of the 65mm housing** (its output face is at z=68mm) so the arm link clears the stationary output cap. This is an output-side stub on the rotating member — it does not change the housing depth or the 8mm output wall; the cap, ring gear body, and motor plate are unaffected.
+
+**Total assembly depth including NEMA 17:** ~65mm housing + 48mm motor body = **~113mm** (motor pilot recesses 2mm into the motor plate's outer face — already inside the 65mm housing depth, so it doesn't add or subtract from the total). The 3mm hub stub adds to the output-side interface but not to the housing/motor envelope.
 
 ---
 
@@ -253,9 +257,11 @@ Parts joined with 8× M4 × 60mm socket head cap screws on a 125mm bolt circle. 
 
 A separate printed PETG part (3D-printed; an aluminum version is also viable) that:
 
-- Has 4× blind clearance holes (4.20mm × 19mm deep) on the 60mm pin circle for 4mm dowel pins, closed by a 1mm ceiling on the output-cap side
+- Has 4× blind clearance holes (4.20mm × 19mm deep) on the 60mm pin circle for 4mm dowel pins, closed by a 1mm ceiling on the output-cap side. Depth references the 20mm bearing-grip zone (`cfg.stack_up.output_bearing_total`), so it stays fixed regardless of the proud extension
 - Passes through the 2× 6814 bearing inner races (hub OD = 70.3mm; 70mm bearing inner race + 0.3mm interference grip)
-- Top (output-cap-side) face sits flush at z=57mm and is exposed through the output cap's Ø86.15mm bore — this is the surface to which the next arm link attaches. As-designed, this face has no tapped holes; add mounting features (tapped holes, integrated coupling, etc.) to suit the specific arm-link interface
+- **Output face protrudes 3mm past the chassis.** The hub is 31mm tall (`output_bearing_total` 20mm + `output_wall` 8mm + `proud_above_cap` 3mm), so its output face sits at **z=68mm — 3mm proud of the output cap's outer face (z=65)**. The rotating arm-link interface therefore clears the stationary cap with a 3mm air gap (no rubbing). The proud section passes through the cap's Ø86.15mm bore with ~7.9mm radial clearance. Tune via `cfg.output_hub.proud_above_cap`
+- **Arm-link mount:** 4× M4 clearance through-holes (4.4mm ⌀) on a 50mm bolt circle, offset 45° from the output pins. Each hole runs the full height into a **captive M4 hex-nut pocket (7.2mm AF × 4mm deep) on the inner face** — the arm-link bolt drops from the proud face, through the hub, and threads into the trapped nut (no threads cut in PETG). Drop the 4 nuts into the pockets **before** pressing the hub through the 6814 bearings. Tune via `cfg.output_hub.arm_mount_*`
+- The central 6mm shaft clearance bore is capped at the bearing-grip zone (runs z=37→57 only) so the proud arm-mount face is solid
 - Houses a 625 bearing seat (Ø16.2mm × 5mm) on the inner-face side to support the eccentric shaft output end
 
 ---
@@ -345,7 +351,9 @@ Generate this profile at high resolution (e.g., 1000+ points per full revolution
 | 8 | Housing bolts | M4 × 60mm socket head cap screw | 8 | $2–4 |
 | 8a | Housing nuts | M4 hex nut | 8 | $1 |
 | 9 | Shaft support pin | 5mm × 20mm ground steel dowel pin, h6 | 1 | $0.50–1 |
-| | | | **Total** | **~$45–84** |
+| 10 | Arm-mount bolts | M4 socket head, length per arm link + ~31mm hub (≈M4 × 40–50mm) | 4 | $1–2 |
+| 10a | Arm-mount nuts | M4 hex nut (captive in output hub inner face) | 4 | $1 |
+| | | | **Total** | **~$47–87** |
 
 ---
 
@@ -362,7 +370,7 @@ src/
   ring_gear_body.py      # Main housing cylinder + bearing seat + reveal windows
   motor_plate.py         # NEMA 17 mount + ring pin holes
   output_cap.py          # Output-side cap + nut pockets
-  output_hub.py          # Output plate through 6814 bearings + 625 seat
+  output_hub.py          # Output plate (proud arm-mount face + M4 captive-nut holes) through 6814 bearings + 625 seat
   purchased_parts.py     # Simplified bearings, motor, pins for visualization
   helpers/
     housing_profile.py   # Shared 8-pillar / 8-window cutter (motor plate, ring gear body, output cap)

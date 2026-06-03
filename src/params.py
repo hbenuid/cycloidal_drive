@@ -151,6 +151,13 @@ class OutputHubParams:
     shaft_clearance_bore: float = 6.0  # mm (5mm pin + 1mm clearance)
     output_hub_pin_ceiling: float = 1.0  # mm, closed-top thickness above blind pin holes
 
+    # Arm-link interface: output face protrudes past the chassis so the arm link
+    # clears the stationary output cap (cap outer face is at total_housing_depth).
+    proud_above_cap: float = 3.0  # mm, output face protrudes this far past cap outer face (z=65)
+    arm_mount_bolt_circle_dia: float = 50.0  # mm, arm-link bolt circle (r=25, clears center + output pins)
+    arm_mount_bolt_count: int = 4  # 4× M4 clearance holes (bolts thread into captive nuts)
+    arm_mount_angle_offset_deg: float = 45.0  # offset from output pins (0/90/180/270) so nut pockets clear them
+
 
 
 @dataclass(frozen=True)

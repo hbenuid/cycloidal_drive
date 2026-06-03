@@ -176,13 +176,99 @@ class TestCadQuerySolid:
         )
 
     def test_height(self, hub_solid):
-        """Z height should match output bearing total (20mm)."""
+        """Z height = bearing grip + cap wall + proud extension (31mm).
+
+        The hub now rises past the cap so the arm-mount face is proud of the chassis.
+        """
         bb = hub_solid.val().BoundingBox()
         z_size = bb.zmax - bb.zmin
-        expected = CFG.stack_up.output_bearing_total  # 20mm
+        stack = CFG.stack_up
+        hub = CFG.output_hub
+        expected = stack.output_bearing_total + stack.output_wall + hub.proud_above_cap  # 31mm
 
         assert abs(z_size - expected) < 0.1, (
             f"Z extent {z_size:.2f}mm, expected {expected:.2f}mm"
+        )
+
+    def test_output_face_proud_of_cap(self, hub_solid):
+        """Top (output) face must sit proud of the output cap's outer face.
+
+        Hub bottom is at global z_output_bearings; its top must clear
+        total_housing_depth (cap outer face) by proud_above_cap.
+        """
+        bb = hub_solid.val().BoundingBox()
+        stack = CFG.stack_up
+        hub = CFG.output_hub
+        # Solid is built at local Z; translated to z_output_bearings in the assembly.
+        global_top = stack.z_output_bearings + bb.zmax
+        expected_top = stack.total_housing_depth + hub.proud_above_cap  # 65 + 3 = 68
+
+        assert abs(global_top - expected_top) < 0.1, (
+            f"Output face at z={global_top:.2f}mm, expected {expected_top:.2f}mm "
+            f"({hub.proud_above_cap}mm proud of cap at z={stack.total_housing_depth}mm)"
+        )
+
+    def test_arm_mount_holes_through(self, hub_solid):
+        """The 4 arm-mount holes must pass fully through the hub (both faces open)."""
+        from cadquery.occ_impl.geom import Vector
+        from OCP.BRepClass3d import BRepClass3d_SolidClassifier
+        from OCP.TopAbs import TopAbs_OUT
+
+        hub = CFG.output_hub
+        bb = hub_solid.val().BoundingBox()
+        arm_r = hub.arm_mount_bolt_circle_dia / 2.0  # 25mm
+        off = math.radians(hub.arm_mount_angle_offset_deg)
+        solid = hub_solid.val()
+        classifier = BRepClass3d_SolidClassifier(solid.wrapped)
+
+        for i in range(hub.arm_mount_bolt_count):
+            a = off + 2 * math.pi * i / hub.arm_mount_bolt_count
+            x, y = arm_r * math.cos(a), arm_r * math.sin(a)
+            # Probe the hole axis just inside both faces — both must be empty (OUT).
+            for z in (bb.zmin + 0.5, bb.zmax - 0.5):
+                classifier.Perform(Vector(x, y, z).toPnt(), 1e-3)
+                assert classifier.State() == TopAbs_OUT, (
+                    f"Arm-mount hole at angle {math.degrees(a):.0f}°, z={z:.1f}mm "
+                    "not open — through-hole missing"
+                )
+
+    def test_arm_mount_nut_pockets_present(self, hub_solid):
+        """Captive hex-nut pockets must be cut into the inner face only.
+
+        Probe a point offset from the pocket axis by more than the through-hole
+        radius but less than the hex apothem (inscribed circle), so it lands inside
+        the pocket for any hex orientation but outside the 4.4mm bolt hole.  It must
+        be empty near the inner face (in the pocket) yet solid up in the proud
+        section (above the pocket) — confirming a localized counterbore.
+        """
+        from cadquery.occ_impl.geom import Vector
+        from OCP.BRepClass3d import BRepClass3d_SolidClassifier
+        from OCP.TopAbs import TopAbs_OUT, TopAbs_IN, TopAbs_ON
+
+        hub = CFG.output_hub
+        h = CFG.housing
+        bb = hub_solid.val().BoundingBox()
+        arm_r = hub.arm_mount_bolt_circle_dia / 2.0
+        off = math.radians(hub.arm_mount_angle_offset_deg)
+        apothem = h.bolt_nut_pocket_af / 2.0  # 3.6mm — hex inscribed radius
+        hole_r = (h.bolt_dia + 0.4) / 2.0  # 2.2mm through-hole radius
+        offset = (apothem + hole_r) / 2.0  # ~2.9mm: inside hex (any rotation), outside hole
+
+        solid = hub_solid.val()
+        classifier = BRepClass3d_SolidClassifier(solid.wrapped)
+        a = off  # first pocket
+        probe_r = arm_r + offset
+        x, y = probe_r * math.cos(a), probe_r * math.sin(a)
+
+        # Inside the pocket near the inner face → empty.
+        classifier.Perform(Vector(x, y, h.bolt_nut_depth / 2.0).toPnt(), 1e-3)
+        assert classifier.State() == TopAbs_OUT, (
+            "No hex nut pocket near the inner face at the arm-mount bolt circle"
+        )
+        # Same XY up in the proud section (above the pocket) → solid.
+        classifier.Perform(Vector(x, y, bb.zmax - 1.0).toPnt(), 1e-3)
+        assert classifier.State() in (TopAbs_IN, TopAbs_ON), (
+            "Nut pocket extends too far — proud section should be solid here"
         )
 
     def test_pin_holes_blind_from_output_face(self, hub_solid):
@@ -225,24 +311,36 @@ class TestCadQuerySolid:
         tol = CFG.tolerances
         stack = CFG.stack_up
 
+        h = CFG.housing
         hub_r = hub.od / 2.0
-        height = stack.output_bearing_total
+        bearing_grip = stack.output_bearing_total  # 20mm — shaft bore depth
+        height = bearing_grip + stack.output_wall + hub.proud_above_cap  # 31mm total
         shaft_r = hub.shaft_clearance_bore / 2.0
 
-        # Upper: full cylinder minus shaft bore only
-        upper = math.pi * hub_r ** 2 * height - math.pi * shaft_r ** 2 * height
+        # Upper: full cylinder minus the shaft bore (only as deep as the grip zone)
+        upper = math.pi * hub_r ** 2 * height - math.pi * shaft_r ** 2 * bearing_grip
 
         # Lower: subtract all features generously
         pocket_r = (b.inp_od + tol.bearing_seat_bore_add) / 2.0
         pocket_vol = math.pi * pocket_r ** 2 * b.inp_width
         pin_hole_dia = d.output_pin_dia - tol.ring_pin_press_sub  # 4.20mm clearance
-        pin_hole_depth = height - hub.output_hub_pin_ceiling  # 19mm blind
+        pin_hole_depth = bearing_grip - hub.output_hub_pin_ceiling  # 19mm blind
         pin_vol = d.output_pin_count * math.pi * (pin_hole_dia / 2.0) ** 2 * pin_hole_depth
+        # 4× M4 arm-mount through-holes (full height) + captive hex-nut pockets
+        arm_hole_r = (h.bolt_dia + 0.4) / 2.0  # 2.2mm
+        arm_hole_vol = hub.arm_mount_bolt_count * math.pi * arm_hole_r ** 2 * height
+        nut_pocket_vol = (
+            hub.arm_mount_bolt_count
+            * math.pi * (h.bolt_nut_pocket_af / 2.0) ** 2  # over-estimate pocket as a disc
+            * h.bolt_nut_depth
+        )
         lower = (
             math.pi * hub_r ** 2 * height
-            - math.pi * shaft_r ** 2 * height
+            - math.pi * shaft_r ** 2 * bearing_grip
             - pocket_vol
             - pin_vol
+            - arm_hole_vol
+            - nut_pocket_vol
         ) * 0.9  # 10% margin for overlap
 
         vol = hub_solid.val().Volume()

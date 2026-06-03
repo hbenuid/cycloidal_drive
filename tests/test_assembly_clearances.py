@@ -54,6 +54,25 @@ class TestAxialStackUp:
         """Housing depth: 9mm plate + 48mm body + 8mm cap = 65mm."""
         assert abs(CFG.stack_up.total_housing_depth - 65.0) < 0.01
 
+    def test_output_hub_protrudes_past_chassis(self):
+        """The rotating output hub must stick out past the cap so the arm link clears it.
+
+        Hub height = bearing grip + cap wall + proud extension; positioned at
+        z_output_bearings, its output face lands proud_above_cap beyond the cap
+        outer face (total_housing_depth).
+        """
+        s = CFG.stack_up
+        hub = CFG.output_hub
+        hub_height = s.output_bearing_total + s.output_wall + hub.proud_above_cap
+        hub_top_z = s.z_output_bearings + hub_height
+        assert abs(hub_top_z - (s.total_housing_depth + hub.proud_above_cap)) < 0.01, (
+            f"Hub top at {hub_top_z}mm != cap face {s.total_housing_depth}mm "
+            f"+ proud {hub.proud_above_cap}mm"
+        )
+        assert hub_top_z > s.total_housing_depth, (
+            f"Hub top {hub_top_z}mm does not protrude past chassis {s.total_housing_depth}mm"
+        )
+
     def test_disc1_before_disc2(self):
         """Disc 1 must sit at a lower Z than disc 2."""
         s = CFG.stack_up
@@ -231,6 +250,33 @@ class TestRadialClearances:
         )
         assert clearance >= 0.2, (
             f"Hub-to-cap clearance only {clearance:.3f}mm (want >= 0.2mm)"
+        )
+
+    def test_arm_mount_holes_clear_output_pins(self):
+        """Arm-mount holes (+ captive-nut pockets) must clear the output pin holes.
+
+        The arm-mount bolt circle is offset 45° from the output pins; the nearest
+        arm-hole / output-pin center distance must exceed the nut-pocket envelope
+        radius + the pin-hole radius.
+        """
+        hub = CFG.output_hub
+        d = CFG.disc
+        h = CFG.housing
+        tol = CFG.tolerances
+
+        arm_r = hub.arm_mount_bolt_circle_dia / 2.0  # 25mm
+        pin_r = d.output_pin_circle_dia / 2.0  # 30mm
+        offset = math.radians(hub.arm_mount_angle_offset_deg)  # 45° between an arm hole and a pin
+        # Law of cosines for the nearest arm-hole / pin center spacing.
+        dist = math.sqrt(arm_r ** 2 + pin_r ** 2 - 2 * arm_r * pin_r * math.cos(offset))
+
+        nut_pocket_r = h.bolt_nut_pocket_af / 2.0 / math.cos(math.radians(30))  # hex circumradius
+        pin_hole_r = (d.output_pin_dia - tol.ring_pin_press_sub) / 2.0  # 4.20mm hole → 2.1mm
+        needed = nut_pocket_r + pin_hole_r
+
+        assert dist > needed, (
+            f"Arm-mount feature {dist:.2f}mm from output pin < required {needed:.2f}mm — "
+            "captive-nut pocket would collide with an output pin hole"
         )
 
     def test_output_hub_near_6814_inner(self):
@@ -550,6 +596,22 @@ class TestCadQueryAssemblyInterference:
         vol = interference.val().Volume()
         assert vol < 1.0, (
             f"Output hub / cap interference = {vol:.1f}mm³"
+        )
+
+    def test_output_hub_protrudes_through_cap(self, output_hub_and_cap):
+        """Assembled hub output face must sit proud of the cap's outer face.
+
+        Assembled-context counterpart to the part-level proud-face check: with no
+        radial interference (above), the hub top must clear the cap top by ≈
+        proud_above_cap so the arm link mounts above the chassis.
+        """
+        hub, cap = output_hub_and_cap
+        hub_top = hub.val().BoundingBox().zmax
+        cap_top = cap.val().BoundingBox().zmax
+        proud = CFG.output_hub.proud_above_cap
+        assert abs((hub_top - cap_top) - proud) < 0.1, (
+            f"Hub top {hub_top:.2f}mm vs cap top {cap_top:.2f}mm — "
+            f"expected hub proud by {proud}mm"
         )
 
     @pytest.fixture(scope="class")
