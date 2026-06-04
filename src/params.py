@@ -108,7 +108,7 @@ class HousingParams:
     bore_dia: float = 116.0  # mm
     wall_thickness: float = 12.0  # mm (140 - 116) / 2
     motor_plate_wall: float = 5.0  # mm
-    output_wall: float = 8.0  # mm (thickened for hex nut pockets)
+    output_wall: float = 8.0  # mm (thickened for hex nut pockets); NOTE: vestigial — geometry uses StackUp.output_wall
     bolt_count: int = 8
     bolt_circle_dia: float = 125.0  # mm (outside 116mm bore)
     bolt_dia: float = 4.0  # mm (M4)
@@ -153,10 +153,15 @@ class OutputHubParams:
 
     # Arm-link interface: output face protrudes past the chassis so the arm link
     # clears the stationary output cap (cap outer face is at total_housing_depth).
-    proud_above_cap: float = 3.0  # mm, output face protrudes this far past cap outer face (z=65)
+    proud_above_cap: float = 2.0  # mm, output face protrudes this far past cap outer face (z=65); trimmed 3→2, keeps a 2mm air gap clear of the cap
     arm_mount_bolt_circle_dia: float = 50.0  # mm, arm-link bolt circle (r=25, clears center + output pins)
     arm_mount_bolt_count: int = 4  # 4× M4 clearance holes (bolts thread into captive nuts)
     arm_mount_angle_offset_deg: float = 45.0  # offset from output pins (0/90/180/270) so nut pockets clear them
+    # Central lightening recess in the proud arm-mount face — reclaims dead material
+    # from the solid block above the bearing-grip zone.  r=18mm leaves ~4.8mm wall to
+    # the arm-bolt edges (r=22.8mm) and clears the pin-hole columns (r=27.9mm).
+    arm_mount_pocket_dia: float = 36.0  # mm; set 0.0 to disable (keep a fully sealed face)
+    arm_mount_pocket_floor: float = 1.0  # mm solid floor left above the bearing-grip zone
 
 
 
@@ -197,9 +202,9 @@ class StackUp:
     input_clearance: float = 4.0  # gap between motor plate inner face and disc 1
     disc_thickness: float = 10.0
     inter_disc_spacer: float = 2.0
-    output_clearance: float = 2.0
+    output_clearance: float = 2.0  # gap between disc 2 and output bearings
     output_bearing_total: float = 20.0  # 2 x 6814 width
-    output_wall: float = 8.0
+    output_wall: float = 8.0  # depth pinned by M4×60 bolt (counterbore 4.5 + 60 = 64.5mm); cannot shrink without bolt protrusion
 
     @property
     def z_motor_plate_inner(self) -> float:

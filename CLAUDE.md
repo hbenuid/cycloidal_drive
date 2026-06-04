@@ -200,7 +200,7 @@ Located in the output hub, supporting the eccentric shaft's free end via the 5mm
 | Item | Spec | Qty | Purpose |
 |---|---|---|---|
 | Motor mounting bolts | M3 × 10mm socket head (5.3mm head ⌀ × 3mm head height, 13mm total) | 4 | Mount motor to housing (6mm through plate + 4mm thread engagement, head flush in 3mm counterbore on inner face) |
-| Arm-mount bolts | M4 socket head, length per arm link + ~31mm hub (≈M4 × 40–50mm) | 4 | Arm link → output hub; drops through the proud face and threads into a captive M4 nut on the hub inner face |
+| Arm-mount bolts | M4 socket head, length per arm link + ~30mm hub (≈M4 × 40–50mm) | 4 | Arm link → output hub; drops through the proud face and threads into a captive M4 nut on the hub inner face |
 | Arm-mount nuts | M4 hex nut | 4 | Captive in the output-hub inner-face hex pockets (7.2mm AF × 4mm); install before pressing hub through 6814 bearings |
 
 ---
@@ -223,9 +223,11 @@ Measured from motor mounting face inward:
 
 **Total housing depth: ~65mm** (not including motor body protrusion)
 
-**Output hub protrusion:** the rotating output hub extends **3mm proud of the 65mm housing** (its output face is at z=68mm) so the arm link clears the stationary output cap. This is an output-side stub on the rotating member — it does not change the housing depth or the 8mm output wall; the cap, ring gear body, and motor plate are unaffected.
+**Output hub protrusion:** the rotating output hub extends **2mm proud of the 65mm housing** (its output face is at z=67mm) so the arm link clears the stationary output cap. This is an output-side stub on the rotating member — it does not change the housing depth or the 8mm output wall; the cap, ring gear body, and motor plate are unaffected.
 
-**Total assembly depth including NEMA 17:** ~65mm housing + 48mm motor body = **~113mm** (motor pilot recesses 2mm into the motor plate's outer face — already inside the 65mm housing depth, so it doesn't add or subtract from the total). The 3mm hub stub adds to the output-side interface but not to the housing/motor envelope.
+**Housing depth is bolt-pinned:** the 65mm axial depth cannot be shortened without changing a purchased part. The M4×60 housing bolt occupies counterbore 4.5mm + 60mm = 64.5mm from the motor face, so any housing shorter than ~64.5mm would let the bolt tip protrude past the output cap (`tests/test_assembly_clearances.py::test_bolt_does_not_protrude`). Material/space savings therefore come from the rotating hub (lightening recess + 1mm-shorter proud), not the housing envelope.
+
+**Total assembly depth including NEMA 17:** ~65mm housing + 48mm motor body = **~113mm** (motor pilot recesses 2mm into the motor plate's outer face — already inside the 65mm housing depth, so it doesn't add or subtract from the total). The 2mm hub stub adds to the output-side interface but not to the housing/motor envelope.
 
 ---
 
@@ -259,9 +261,9 @@ A separate printed PETG part (3D-printed; an aluminum version is also viable) th
 
 - Has 4× blind clearance holes (4.20mm × 19mm deep) on the 60mm pin circle for 4mm dowel pins, closed by a 1mm ceiling on the output-cap side. Depth references the 20mm bearing-grip zone (`cfg.stack_up.output_bearing_total`), so it stays fixed regardless of the proud extension
 - Passes through the 2× 6814 bearing inner races (hub OD = 70.3mm; 70mm bearing inner race + 0.3mm interference grip)
-- **Output face protrudes 3mm past the chassis.** The hub is 31mm tall (`output_bearing_total` 20mm + `output_wall` 8mm + `proud_above_cap` 3mm), so its output face sits at **z=68mm — 3mm proud of the output cap's outer face (z=65)**. The rotating arm-link interface therefore clears the stationary cap with a 3mm air gap (no rubbing). The proud section passes through the cap's Ø86.15mm bore with ~7.9mm radial clearance. Tune via `cfg.output_hub.proud_above_cap`
+- **Output face protrudes 2mm past the chassis.** The hub is 30mm tall (`output_bearing_total` 20mm + `output_wall` 8mm + `proud_above_cap` 2mm), so its output face sits at **z=67mm — 2mm proud of the output cap's outer face (z=65)**. The rotating arm-link interface therefore clears the stationary cap with a 2mm air gap (no rubbing). The proud section passes through the cap's Ø86.15mm bore with ~7.9mm radial clearance. Tune via `cfg.output_hub.proud_above_cap` (trimmed 3→2mm to save hub material)
 - **Arm-link mount:** 4× M4 clearance through-holes (4.4mm ⌀) on a 50mm bolt circle, offset 45° from the output pins. Each hole runs the full height into a **captive M4 hex-nut pocket (7.2mm AF × 4mm deep) on the inner face** — the arm-link bolt drops from the proud face, through the hub, and threads into the trapped nut (no threads cut in PETG). Drop the 4 nuts into the pockets **before** pressing the hub through the 6814 bearings. Tune via `cfg.output_hub.arm_mount_*`
-- The central 6mm shaft clearance bore is capped at the bearing-grip zone (runs z=37→57 only) so the proud arm-mount face is solid
+- The central 6mm shaft clearance bore is capped at the bearing-grip zone (runs z=37→57 only). Above that the block is solid **except for a central lightening recess** (Ø36mm, ~9mm deep) cut into the proud arm-mount face — it reclaims ~9cm³ of otherwise-dead material; the arm link bears on the r=25→35mm annulus around the bolt circle. Tune via `cfg.output_hub.arm_mount_pocket_dia` (set 0 for a fully sealed face)
 - Houses a 625 bearing seat (Ø16.2mm × 5mm) on the inner-face side to support the eccentric shaft output end
 
 ---
@@ -351,7 +353,7 @@ Generate this profile at high resolution (e.g., 1000+ points per full revolution
 | 8 | Housing bolts | M4 × 60mm socket head cap screw | 8 | $2–4 |
 | 8a | Housing nuts | M4 hex nut | 8 | $1 |
 | 9 | Shaft support pin | 5mm × 20mm ground steel dowel pin, h6 | 1 | $0.50–1 |
-| 10 | Arm-mount bolts | M4 socket head, length per arm link + ~31mm hub (≈M4 × 40–50mm) | 4 | $1–2 |
+| 10 | Arm-mount bolts | M4 socket head, length per arm link + ~30mm hub (≈M4 × 40–50mm) | 4 | $1–2 |
 | 10a | Arm-mount nuts | M4 hex nut (captive in output hub inner face) | 4 | $1 |
 | | | | **Total** | **~$47–87** |
 

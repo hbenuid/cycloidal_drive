@@ -10,8 +10,9 @@ Features:
   - 4× output pin holes on 60mm circle — 4.20mm clearance, blind from the
     output-cap side; dowels are captured between the closed hub ceiling
     and the motor plate inner face
-  - Central shaft clearance bore (6.0mm), capped above the bearing-grip zone
-    so the proud arm-mount face is solid
+  - Central shaft clearance bore (6.0mm), capped above the bearing-grip zone;
+    the proud arm-mount face carries a central lightening recess (arm link bears
+    on the r=25→35mm annulus around the bolt circle)
   - 4× M4 arm-link mounting holes (50mm circle, 45° off the output pins) running
     through the hub into captive M4 hex-nut pockets on the inner face
 
@@ -50,7 +51,7 @@ def build_output_hub(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
     hub_od = hub.od  # 70.3mm (0.3mm interference grip on the 70mm 6814 inner race)
     bearing_grip = stack.output_bearing_total  # 20mm — section that grips the 2× 6814 inner races
     # Total height extends past the cap so the arm-mount face is proud of the chassis.
-    hub_height = bearing_grip + stack.output_wall + hub.proud_above_cap  # 31mm → top face at z=68
+    hub_height = bearing_grip + stack.output_wall + hub.proud_above_cap  # 30mm → top face at z=67
     shaft_bore_dia = hub.shaft_clearance_bore  # 6.0mm
 
     # 625 bearing pocket (outer race press-fit seat on inner face)
@@ -139,6 +140,22 @@ def build_output_hub(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
             .extrude(h.bolt_nut_depth)  # 4mm deep, z=37→41
         )
         result = result.cut(hex_pocket)
+
+    # ── 6. Central lightening pocket (proud arm-mount face) ─────────
+    # The block above the bearing-grip zone is dead material at the center
+    # (shaft bore stops at z=bearing_grip, pins at r=30, arm bolts at r=25).
+    # Open a blind recess from the top face, leaving a solid floor above the
+    # grip zone.  Set arm_mount_pocket_dia=0 to keep a fully sealed face.
+    if hub.arm_mount_pocket_dia > 0.0:
+        pocket_z0 = bearing_grip + hub.arm_mount_pocket_floor  # 21mm
+        pocket_depth = hub_height - pocket_z0  # up to the top (output) face
+        lightening = (
+            cq.Workplane("XY")
+            .workplane(offset=pocket_z0)
+            .circle(hub.arm_mount_pocket_dia / 2.0)
+            .extrude(pocket_depth)
+        )
+        result = result.cut(lightening)
 
     return result
 

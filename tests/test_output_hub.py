@@ -334,6 +334,13 @@ class TestCadQuerySolid:
             * math.pi * (h.bolt_nut_pocket_af / 2.0) ** 2  # over-estimate pocket as a disc
             * h.bolt_nut_depth
         )
+        # Central lightening recess in the proud arm-mount face
+        lightening_vol = (
+            math.pi * (hub.arm_mount_pocket_dia / 2.0) ** 2
+            * (height - bearing_grip - hub.arm_mount_pocket_floor)
+            if hub.arm_mount_pocket_dia > 0
+            else 0.0
+        )
         lower = (
             math.pi * hub_r ** 2 * height
             - math.pi * shaft_r ** 2 * bearing_grip
@@ -341,6 +348,7 @@ class TestCadQuerySolid:
             - pin_vol
             - arm_hole_vol
             - nut_pocket_vol
+            - lightening_vol
         ) * 0.9  # 10% margin for overlap
 
         vol = hub_solid.val().Volume()
