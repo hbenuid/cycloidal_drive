@@ -85,3 +85,55 @@ def build_reveal_window_cutter(
         cutter = cutter.cut(pillar)
 
     return cutter
+
+
+def chamfer_outer_silhouette(result, cfg, external_face=None):
+    """Bevel the outer silhouette of a finished housing part.
+
+    Always chamfers the 8 pillar outer vertical corners (the full-height "barrel"
+    edges, present on every part).  When ``external_face`` is given (a CadQuery face
+    selector for the part's externally-facing end face, e.g. ``"<Z"`` or ``">Z"``),
+    the *entire outer perimeter* of that face is also chamfered — the complete
+    8-pillar / 8-window silhouette (outer arcs, the inner arcs between pillars, and
+    the pillar side edges), taken from the face's outer wire so internal holes are
+    excluded.
+
+    Mating end faces, internal holes, and (on parts whose ends both mate, e.g. the
+    ring gear body) the window cut-outs are left sharp.  Call AFTER the reveal
+    windows are cut — the pillar corners and perimeter only exist once the windows
+    and central features are present.
+
+    Args:
+        result:         CadQuery Workplane holding the finished single solid.
+        cfg:            Drive configuration (housing OD + ``edge_chamfer``).
+        external_face:  Face selector (``"<Z"`` / ``">Z"``) for the external end
+                        face whose full perimeter should be beveled, or None if both
+                        end faces are mating (only the barrel verticals are beveled).
+
+    Returns:
+        The Workplane with the outer silhouette chamfered (unchanged if
+        ``edge_chamfer`` <= 0).
+    """
+    ch = cfg.housing.edge_chamfer
+    if ch <= 0:
+        return result
+
+    rmin = cfg.housing.od / 2.0 - 1.0  # ~69mm: pillar outer corners, skips r≤66 bolt/counterbore artifacts
+    sel = []
+    # Pillar outer vertical corners (every part) — the barrel silhouette.
+    for e in result.val().Edges():
+        p0, p1 = e.startPoint(), e.endPoint()
+        rm = math.hypot((p0.x + p1.x) / 2.0, (p0.y + p1.y) / 2.0)
+        if (
+            rm >= rmin
+            and e.geomType() == "LINE"
+            and abs(p1.z - p0.z) > 1e-6
+            and math.hypot(p0.x - p1.x, p0.y - p1.y) < 1e-6
+        ):
+            sel.append(e)  # pillar outer vertical corner
+
+    # Full outer perimeter of the external end face (outer wire excludes holes).
+    if external_face is not None:
+        sel += result.faces(external_face).val().outerWire().Edges()
+
+    return result.newObject(sel).chamfer(ch) if sel else result

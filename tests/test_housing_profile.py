@@ -162,3 +162,117 @@ class TestProfileAlignment:
                     f"{name}: expected void at window centre "
                     f"angle={math.degrees(mid):.1f}° (x={x:.2f}, y={y:.2f}, z={z})"
                 )
+
+
+# ===================================================================
+# 3. Outer-silhouette chamfer
+# ===================================================================
+
+
+class TestOuterChamfer:
+    """All three parts get their outer silhouette beveled
+    (``chamfer_outer_silhouette``) while faces that mate against a neighbour
+    stay sharp.  Motor plate + output cap bevel the entire external-face
+    perimeter; the ring gear body (both ends mate) bevels only the barrel
+    verticals.
+    """
+
+    PILLAR_TIP_R = 69.5  # just inside the 70mm pillar outer face, at a pillar centre
+
+    @pytest.fixture(scope="class")
+    def parts(self):
+        pytest.importorskip("cadquery")
+        from src.motor_plate import build_motor_plate
+        from src.ring_gear_body import build_ring_gear_body
+        from src.output_cap import build_output_cap
+
+        # name -> (build fn, thickness, external_z or None, [mating_z, ...])
+        return {
+            "motor_plate": (build_motor_plate, 9.0, 0.0, [9.0]),
+            "output_cap": (build_output_cap, 8.0, 8.0, [0.0]),
+            "ring_gear_body": (build_ring_gear_body, 48.0, None, [0.0, 48.0]),
+        }
+
+    def _no_chamfer_cfg(self):
+        import copy
+
+        cfg0 = copy.deepcopy(CFG)
+        object.__setattr__(cfg0.housing, "edge_chamfer", 0.0)
+        return cfg0
+
+    def test_edge_chamfer_param(self):
+        assert CFG.housing.edge_chamfer == 1.5
+        assert CFG.housing.edge_chamfer > 0
+
+    def test_parts_valid_od_thickness(self, parts):
+        """Chamfer leaves one valid solid; OD (140mm at mid-height) and
+        thickness are unchanged — only the corners are broken."""
+        for name, (fn, th, ext, mates) in parts.items():
+            wp = fn()
+            assert len(wp.solids().vals()) == 1, f"{name}: not a single solid"
+            v = wp.val()
+            assert v.isValid(), f"{name}: invalid solid"
+            bb = v.BoundingBox()
+            assert abs(bb.xlen - CFG.housing.od) < 0.2, f"{name}: OD {bb.xlen:.2f}"
+            assert abs(bb.zlen - th) < 0.05, f"{name}: thickness {bb.zlen:.2f}"
+
+    def test_chamfer_reduces_volume(self, parts):
+        """The default chamfer removes material vs. an un-chamfered build."""
+        cfg0 = self._no_chamfer_cfg()
+        for name, (fn, th, ext, mates) in parts.items():
+            assert fn().val().Volume() < fn(cfg0).val().Volume(), (
+                f"{name}: chamfer removed no material"
+            )
+
+    def test_external_rim_beveled_but_mating_face_sharp(self, parts):
+        """Motor plate & output cap: a pillar tip is beveled away just inside
+        the external face, yet solid (sharp) just inside the mating face."""
+        for name in ("motor_plate", "output_cap"):
+            fn, th, ext, mates = parts[name]
+            part = fn()
+            z_ext = ext + 0.1 if ext == 0 else ext - 0.1
+            assert not _is_inside(part, self.PILLAR_TIP_R, 0.0, z_ext), (
+                f"{name}: external rim should be beveled at the pillar tip"
+            )
+            mz = mates[0]
+            z_mate = mz + 0.1 if mz == 0 else mz - 0.1
+            assert _is_inside(part, self.PILLAR_TIP_R, 0.0, z_mate), (
+                f"{name}: mating face must stay sharp (solid at the pillar tip)"
+            )
+
+    def test_ring_gear_body_both_ends_sharp(self, parts):
+        """Both ring-gear-body ends mate → no end-rim chamfer (verticals only),
+        so the pillar tip is solid just inside each end face."""
+        fn, th, ext, mates = parts["ring_gear_body"]
+        part = fn()
+        for mz in mates:
+            z = mz + 0.1 if mz == 0 else mz - 0.1
+            assert _is_inside(part, self.PILLAR_TIP_R, 0.0, z), (
+                f"ring_gear_body end z={mz} should stay sharp"
+            )
+
+    def test_full_external_perimeter_beveled(self):
+        """The cap parts bevel the *entire* external perimeter (pillar sides +
+        inner arcs), not just the outer corners — so passing ``external_face``
+        removes materially more than the barrel verticals alone."""
+        from src.helpers.housing_profile import chamfer_outer_silhouette
+        from src.motor_plate import build_motor_plate
+        from src.output_cap import build_output_cap
+
+        cfg0 = self._no_chamfer_cfg()
+        for fn, sel in ((build_motor_plate, "<Z"), (build_output_cap, ">Z")):
+            base = fn(cfg0)  # un-chamfered
+            verticals_only = chamfer_outer_silhouette(base, CFG, external_face=None)
+            full = chamfer_outer_silhouette(base, CFG, external_face=sel)
+            assert full.val().Volume() < verticals_only.val().Volume() - 50.0, (
+                "external-face perimeter beveling should remove materially more "
+                "than the barrel verticals alone"
+            )
+
+    def test_chamfer_can_be_disabled(self):
+        """edge_chamfer=0 leaves the outer corners sharp (helper guard)."""
+        from src.motor_plate import build_motor_plate
+
+        part = build_motor_plate(self._no_chamfer_cfg())
+        # Pillar tip just inside the external (motor) face stays solid.
+        assert _is_inside(part, self.PILLAR_TIP_R, 0.0, 0.1)

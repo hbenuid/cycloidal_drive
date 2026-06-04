@@ -25,7 +25,10 @@ import cadquery as cq
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.params import DriveConfig, DEFAULT_CONFIG, compute_housing_bolt_angles
-from src.helpers.housing_profile import build_reveal_window_cutter
+from src.helpers.housing_profile import (
+    build_reveal_window_cutter,
+    chamfer_outer_silhouette,
+)
 
 
 def build_output_cap(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
@@ -97,6 +100,11 @@ def build_output_cap(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
             .extrude(h.bolt_nut_depth)
         )
         result = result.cut(hex_pocket)
+
+    # ── 6. Bevel the outer silhouette ──────────────────────────────
+    # Full outer perimeter of the back face (Z=cap_thickness, external) + barrel
+    # verticals.  Inner face (Z=0) seats on the ring gear body → left sharp.
+    result = chamfer_outer_silhouette(result, cfg, external_face=">Z")
 
     return result
 

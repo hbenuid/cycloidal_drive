@@ -25,7 +25,10 @@ import cadquery as cq
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.params import DriveConfig, DEFAULT_CONFIG, compute_housing_bolt_angles
-from src.helpers.housing_profile import build_reveal_window_cutter
+from src.helpers.housing_profile import (
+    build_reveal_window_cutter,
+    chamfer_outer_silhouette,
+)
 
 
 def build_motor_plate(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
@@ -153,6 +156,11 @@ def build_motor_plate(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
     # central disc (motor mount, pilot, ring-pin holes, inner pocket)
     # is untouched.
     result = result.cut(build_reveal_window_cutter(cfg, plate_thickness))
+
+    # ── 9. Bevel the outer silhouette ──────────────────────────────
+    # Full outer perimeter of the motor face (Z=0, external) + barrel verticals.
+    # Inner face (Z=9) seats on the ring gear body → left sharp.
+    result = chamfer_outer_silhouette(result, cfg, external_face="<Z")
 
     return result
 

@@ -299,6 +299,38 @@ class TestCadQuerySolid:
             "blind ceiling above output pin holes is missing"
         )
 
+    def test_central_lightening_pocket(self, hub_solid):
+        """The proud arm-mount face carries a central lightening recess: empty
+        at the centre near the top, with a solid floor above the bearing-grip
+        zone (and a sound wall out to the arm-bolt circle)."""
+        from cadquery.occ_impl.geom import Vector
+        from OCP.BRepClass3d import BRepClass3d_SolidClassifier
+        from OCP.TopAbs import TopAbs_OUT, TopAbs_IN, TopAbs_ON
+
+        hub = CFG.output_hub
+        stack = CFG.stack_up
+        if hub.arm_mount_pocket_dia <= 0:
+            pytest.skip("lightening pocket disabled")
+
+        bb = hub_solid.val().BoundingBox()
+        clf = BRepClass3d_SolidClassifier(hub_solid.val().wrapped)
+
+        # Centre, just below the top (output) face → inside the pocket (empty).
+        clf.Perform(Vector(0, 0, bb.zmax - 0.5).toPnt(), 1e-4)
+        assert clf.State() == TopAbs_OUT, "central lightening pocket missing"
+
+        # Just below the pocket floor (grip-zone top + floor) → solid slab.
+        z_floor = stack.output_bearing_total + hub.arm_mount_pocket_floor
+        clf.Perform(Vector(0, 0, z_floor - 0.3).toPnt(), 1e-4)
+        assert clf.State() in (TopAbs_IN, TopAbs_ON), "pocket floor missing"
+
+        # Wall to the arm-bolt circle stays solid near the top (pocket clears it).
+        arm_r = hub.arm_mount_bolt_circle_dia / 2.0
+        clf.Perform(Vector(arm_r, 0, bb.zmax - 0.5).toPnt(), 1e-4)
+        assert clf.State() in (TopAbs_IN, TopAbs_ON), (
+            "pocket should not reach the arm-bolt circle"
+        )
+
     def test_volume_sanity(self, hub_solid):
         """Volume should be between reasonable bounds.
 

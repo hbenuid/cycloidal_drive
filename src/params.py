@@ -107,6 +107,7 @@ class HousingParams:
     od: float = 140.0  # mm (sized for 3mm+ wall around counterbores/nut pockets)
     bore_dia: float = 116.0  # mm
     wall_thickness: float = 12.0  # mm (140 - 116) / 2
+    edge_chamfer: float = 1.5  # mm, 45° chamfer on the outer OD edges (both faces) of all 3 housing parts; hides elephant foot, breaks sharp corners. 0 disables.
     motor_plate_wall: float = 5.0  # mm
     output_wall: float = 8.0  # mm (thickened for hex nut pockets); NOTE: vestigial — geometry uses StackUp.output_wall
     bolt_count: int = 8

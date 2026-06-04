@@ -39,7 +39,10 @@ import cadquery as cq
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from src.params import DriveConfig, DEFAULT_CONFIG, compute_housing_bolt_angles
-from src.helpers.housing_profile import build_reveal_window_cutter
+from src.helpers.housing_profile import (
+    build_reveal_window_cutter,
+    chamfer_outer_silhouette,
+)
 
 
 def build_ring_gear_body(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
@@ -157,6 +160,9 @@ def build_ring_gear_body(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
     # against the 8 pillar top faces (no continuous rim).  Shared with the
     # output cap so both parts present the same outer silhouette.
     result = result.cut(build_reveal_window_cutter(cfg, body_height))
+
+    # ── 7. Bevel the outer silhouette (both end faces mate → verticals only) ──
+    result = chamfer_outer_silhouette(result, cfg, external_face=None)
 
     return result
 
