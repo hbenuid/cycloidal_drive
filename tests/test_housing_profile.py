@@ -1,18 +1,18 @@
 """Validation test suite for the shared housing-profile cutter.
 
 The cutter at ``src/helpers/housing_profile.py`` defines the 8-pillar /
-8-window outer profile shared by the motor plate, ring gear body, and
-output cap.  These tests exercise the helper directly so that any change
-to the profile (pillar dims, bolt angles, bore radii) is caught here
-before the dependent part tests.
+8-window outer profile shared by the motor plate and ring gear body.
+These tests exercise the helper directly so that any change to the
+profile (pillar dims, bolt angles, bore radii) is caught here before
+the dependent part tests.
 
 Tests cover:
   1. Cutter solid validity, bounding box, and volume sanity
   2. Pillar voids in the cutter line up with bolt angles (sample-point
      checks confirm material-vs-void at expected (r, θ) locations)
-  3. Cross-part alignment — motor plate, ring gear body, and output cap
-     all show solid material at every pillar centre and a void at every
-     window centre (mid-Z slice).
+  3. Cross-part alignment — motor plate and ring gear body both show
+     solid material at every pillar centre and a void at every window
+     centre (mid-Z slice).
 """
 
 import math
@@ -109,7 +109,7 @@ def _is_inside(solid, x, y, z):
 
 
 class TestProfileAlignment:
-    """All three housing parts must show solid at pillar centres and void
+    """Both housing parts must show solid at pillar centres and void
     at window centres, at the same (r, θ) coordinates."""
 
     @pytest.fixture(scope="class")
@@ -117,20 +117,18 @@ class TestProfileAlignment:
         pytest.importorskip("cadquery")
         from src.motor_plate import build_motor_plate
         from src.ring_gear_body import build_ring_gear_body
-        from src.output_cap import build_output_cap
         from src.params import DEFAULT_CONFIG as CFG
 
         # Each part's pillar zone — sample at a Z near mid-thickness.
         return [
             ("motor_plate", build_motor_plate(), 5.0),
             ("ring_gear_body", build_ring_gear_body(), 23.5),
-            ("output_cap", build_output_cap(), 4.0),
         ]
 
     def test_pillar_centres_are_solid(self, parts):
         """At every bolt angle, sample a point on the bolt circle (62.5mm)
-        offset slightly tangentially to avoid the M4 through-hole.  All
-        three parts must have material there.
+        offset slightly tangentially to avoid the M4 through-hole.  Both
+        parts must have material there.
         """
         bolt_r = CFG.housing.bolt_circle_dia / 2.0  # 62.5mm
         # Offset 4mm tangentially → still inside pillar (≥6mm half-width
@@ -147,7 +145,7 @@ class TestProfileAlignment:
 
     def test_window_centres_are_void(self, parts):
         """Midway between bolt angles (window centres), the outer ring
-        must be void in all three parts.  Sample at radius 64mm — outside
+        must be void in both parts.  Sample at radius 64mm — outside
         the pillar trapezoid edge at that angle, well inside the 70mm OD.
         """
         bolt_angles = compute_housing_bolt_angles(CFG)
@@ -170,11 +168,11 @@ class TestProfileAlignment:
 
 
 class TestOuterChamfer:
-    """All three parts get their outer silhouette beveled
+    """Both parts get their outer silhouette beveled
     (``chamfer_outer_silhouette``) while faces that mate against a neighbour
-    stay sharp.  Motor plate + output cap bevel the entire external-face
-    perimeter; the ring gear body (both ends mate) bevels only the barrel
-    verticals.
+    stay sharp.  The motor plate (motor face) and the ring gear body (output
+    face) each bevel the entire external-face perimeter; their inner mating
+    faces stay sharp.
     """
 
     PILLAR_TIP_R = 69.5  # just inside the 70mm pillar outer face, at a pillar centre
@@ -184,13 +182,11 @@ class TestOuterChamfer:
         pytest.importorskip("cadquery")
         from src.motor_plate import build_motor_plate
         from src.ring_gear_body import build_ring_gear_body
-        from src.output_cap import build_output_cap
 
         # name -> (build fn, thickness, external_z or None, [mating_z, ...])
         return {
             "motor_plate": (build_motor_plate, 9.0, 0.0, [9.0]),
-            "output_cap": (build_output_cap, 8.0, 8.0, [0.0]),
-            "ring_gear_body": (build_ring_gear_body, 48.0, None, [0.0, 48.0]),
+            "ring_gear_body": (build_ring_gear_body, 51.0, 51.0, [0.0]),
         }
 
     def _no_chamfer_cfg(self):
@@ -225,9 +221,9 @@ class TestOuterChamfer:
             )
 
     def test_external_rim_beveled_but_mating_face_sharp(self, parts):
-        """Motor plate & output cap: a pillar tip is beveled away just inside
+        """Motor plate & ring gear body: a pillar tip is beveled away just inside
         the external face, yet solid (sharp) just inside the mating face."""
-        for name in ("motor_plate", "output_cap"):
+        for name in ("motor_plate", "ring_gear_body"):
             fn, th, ext, mates = parts[name]
             part = fn()
             z_ext = ext + 0.1 if ext == 0 else ext - 0.1
@@ -240,27 +236,28 @@ class TestOuterChamfer:
                 f"{name}: mating face must stay sharp (solid at the pillar tip)"
             )
 
-    def test_ring_gear_body_both_ends_sharp(self, parts):
-        """Both ring-gear-body ends mate → no end-rim chamfer (verticals only),
-        so the pillar tip is solid just inside each end face."""
+    def test_ring_gear_body_mating_face_sharp(self, parts):
+        """The ring-gear-body motor-side face mates against the motor plate → it
+        stays sharp (solid at the pillar tip just inside it).  The output face is
+        external and beveled (covered by test_external_rim_beveled…)."""
         fn, th, ext, mates = parts["ring_gear_body"]
         part = fn()
-        for mz in mates:
-            z = mz + 0.1 if mz == 0 else mz - 0.1
-            assert _is_inside(part, self.PILLAR_TIP_R, 0.0, z), (
-                f"ring_gear_body end z={mz} should stay sharp"
-            )
+        mz = mates[0]  # 0.0 — motor-side mating face
+        z = mz + 0.1 if mz == 0 else mz - 0.1
+        assert _is_inside(part, self.PILLAR_TIP_R, 0.0, z), (
+            f"ring_gear_body mating face z={mz} should stay sharp"
+        )
 
     def test_full_external_perimeter_beveled(self):
-        """The cap parts bevel the *entire* external perimeter (pillar sides +
+        """Both parts bevel the *entire* external perimeter (pillar sides +
         inner arcs), not just the outer corners — so passing ``external_face``
         removes materially more than the barrel verticals alone."""
         from src.helpers.housing_profile import chamfer_outer_silhouette
         from src.motor_plate import build_motor_plate
-        from src.output_cap import build_output_cap
+        from src.ring_gear_body import build_ring_gear_body
 
         cfg0 = self._no_chamfer_cfg()
-        for fn, sel in ((build_motor_plate, "<Z"), (build_output_cap, ">Z")):
+        for fn, sel in ((build_motor_plate, "<Z"), (build_ring_gear_body, ">Z")):
             base = fn(cfg0)  # un-chamfered
             verticals_only = chamfer_outer_silhouette(base, CFG, external_face=None)
             full = chamfer_outer_silhouette(base, CFG, external_face=sel)

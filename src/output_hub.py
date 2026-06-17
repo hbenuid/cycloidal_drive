@@ -1,14 +1,14 @@
 """Output hub — passes through 2× 6814 inner races, carries output pins.
 
-3D-printed PETG part.  Sits at global Z=37mm (z_output_bearings) and now rises
-to Z=68mm — 3mm proud of the output cap's outer face (z=65) so the arm link
-mounts above the stationary chassis without rubbing.  Local Z=0 is the inner
-face (disc-facing side).
+3D-printed PETG part.  Sits at global Z=37mm (z_output_bearings) and rises to
+Z=62mm — 2mm proud of the housing output face (z=60) so the arm link mounts
+above the stationary chassis without rubbing.  Local Z=0 is the inner face
+(disc-facing side).
 
 Features:
   - 625 bearing pocket on inner face (supports eccentric shaft output stub)
   - 4× output pin holes on 60mm circle — 4.20mm clearance, blind from the
-    output-cap side; dowels are captured between the closed hub ceiling
+    output side; dowels are captured between the closed hub ceiling
     and the motor plate inner face
   - Central shaft clearance bore (6.0mm), capped above the bearing-grip zone;
     the proud arm-mount face carries a central lightening recess (arm link bears
@@ -50,8 +50,8 @@ def build_output_hub(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
     # ── Dimensions ──────────────────────────────────────────────────
     hub_od = hub.od  # 70.3mm (0.3mm interference grip on the 70mm 6814 inner race)
     bearing_grip = stack.output_bearing_total  # 20mm — section that grips the 2× 6814 inner races
-    # Total height extends past the cap so the arm-mount face is proud of the chassis.
-    hub_height = bearing_grip + stack.output_wall + hub.proud_above_cap  # 30mm → top face at z=67
+    # Total height extends past the housing so the arm-mount face is proud of the chassis.
+    hub_height = bearing_grip + stack.output_wall + hub.proud_above_housing  # 25mm → top face at z=62
     shaft_bore_dia = hub.shaft_clearance_bore  # 6.0mm
 
     # 625 bearing pocket (outer race press-fit seat on inner face)
@@ -74,7 +74,7 @@ def build_output_hub(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
 
     # ── 2. Central shaft clearance bore (bearing-grip zone only) ────
     # Runs z=37→57 over the 625 pocket / shaft region; the proud section
-    # (z=57→68) stays solid for a clean, sealed arm-mount face.
+    # (z=57→62) stays solid for a clean, sealed arm-mount face.
     shaft_bore = (
         cq.Workplane("XY")
         .circle(shaft_bore_dia / 2.0)
@@ -111,7 +111,7 @@ def build_output_hub(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
     # the inner face.  The bolt circle is offset 45° from the output pins so the
     # nut pockets clear them.  Reuses the housing M4 nut spec.
     arm_r = hub.arm_mount_bolt_circle_dia / 2.0  # 25mm
-    arm_hole_dia = h.bolt_dia + 0.4  # 4.4mm M4 clearance (matches output cap bolt holes)
+    arm_hole_dia = h.bolt_dia + 0.4  # 4.4mm M4 clearance (matches housing bolt holes)
     arm_off = math.radians(hub.arm_mount_angle_offset_deg)  # 45° → holes at 45/135/225/315
     arm_angles = [
         arm_off + 2 * math.pi * i / hub.arm_mount_bolt_count
@@ -119,7 +119,7 @@ def build_output_hub(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
     ]
     arm_pts = [(arm_r * math.cos(a), arm_r * math.sin(a)) for a in arm_angles]
 
-    # Through clearance holes (full height, z=37→68)
+    # Through clearance holes (full height, z=37→62)
     arm_holes = (
         cq.Workplane("XY")
         .pushPoints(arm_pts)

@@ -4,9 +4,9 @@ Verifies all cross-part relationships when parts are positioned per the
 axial stack-up (params.StackUp).  Tests cover:
 
   1. Axial stack-up — Z positions are consistent, no gaps or overlaps
-  2. Housing alignment — motor plate, ring gear body, output cap mate flush
-  3. Radial clearances — discs clear housing, pins clear bearings, hub clears cap
-  4. Bearing retention — 6814 trapped between shoulder and cap
+  2. Housing alignment — motor plate and ring gear body mate flush
+  3. Radial clearances — discs clear housing, pins clear bearings, hub clears lip
+  4. Bearing retention — 6814 held by press-fit + ring body's integral lip
   5. Shaft reach — motor shaft engages D-bore, eccentric shaft reaches 625 pocket
   6. Ring pin span — pins seat in motor plate and ring gear body
   7. CadQuery interference — boolean checks on key mating pairs
@@ -50,24 +50,24 @@ class TestAxialStackUp:
             f"Total depth {s.total_housing_depth}mm != sum {expected}mm"
         )
 
-    def test_total_depth_is_65mm(self):
-        """Housing depth: 9mm plate + 48mm body + 8mm cap = 65mm."""
-        assert abs(CFG.stack_up.total_housing_depth - 65.0) < 0.01
+    def test_total_depth_is_60mm(self):
+        """Housing depth: 9mm plate + 51mm body (incl. 3mm output wall) = 60mm."""
+        assert abs(CFG.stack_up.total_housing_depth - 60.0) < 0.01
 
     def test_output_hub_protrudes_past_chassis(self):
-        """The rotating output hub must stick out past the cap so the arm link clears it.
+        """The rotating output hub must stick out past the housing so the arm link clears it.
 
-        Hub height = bearing grip + cap wall + proud extension; positioned at
-        z_output_bearings, its output face lands proud_above_cap beyond the cap
-        outer face (total_housing_depth).
+        Hub height = bearing grip + output wall + proud extension; positioned at
+        z_output_bearings, its output face lands proud_above_housing beyond the
+        housing output face (total_housing_depth).
         """
         s = CFG.stack_up
         hub = CFG.output_hub
-        hub_height = s.output_bearing_total + s.output_wall + hub.proud_above_cap
+        hub_height = s.output_bearing_total + s.output_wall + hub.proud_above_housing
         hub_top_z = s.z_output_bearings + hub_height
-        assert abs(hub_top_z - (s.total_housing_depth + hub.proud_above_cap)) < 0.01, (
-            f"Hub top at {hub_top_z}mm != cap face {s.total_housing_depth}mm "
-            f"+ proud {hub.proud_above_cap}mm"
+        assert abs(hub_top_z - (s.total_housing_depth + hub.proud_above_housing)) < 0.01, (
+            f"Hub top at {hub_top_z}mm != housing face {s.total_housing_depth}mm "
+            f"+ proud {hub.proud_above_housing}mm"
         )
         assert hub_top_z > s.total_housing_depth, (
             f"Hub top {hub_top_z}mm does not protrude past chassis {s.total_housing_depth}mm"
@@ -95,12 +95,12 @@ class TestAxialStackUp:
             f"Output clearance {gap}mm != spec {s.output_clearance}mm"
         )
 
-    def test_output_bearings_end_at_output_cap(self):
-        """Output bearings top must align with output cap Z."""
+    def test_output_bearings_end_at_bearing_top(self):
+        """Output bearings top must align with the retention-lip start (z_bearing_top)."""
         s = CFG.stack_up
         bearing_top = s.z_output_bearings + s.output_bearing_total
-        assert abs(bearing_top - s.z_output_cap) < 0.01, (
-            f"Bearing top {bearing_top}mm != output cap Z {s.z_output_cap}mm"
+        assert abs(bearing_top - s.z_bearing_top) < 0.01, (
+            f"Bearing top {bearing_top}mm != z_bearing_top {s.z_bearing_top}mm"
         )
 
 
@@ -110,7 +110,7 @@ class TestAxialStackUp:
 
 
 class TestHousingAlignment:
-    """Verify the three housing pieces mate flush."""
+    """Verify the two housing pieces mate flush."""
 
     def test_motor_plate_inner_face(self):
         """Motor plate inner face at Z=10mm."""
@@ -119,15 +119,15 @@ class TestHousingAlignment:
         assert abs(s.z_motor_plate_inner - expected) < 0.01
 
     def test_ring_gear_body_height(self):
-        """Ring gear body spans from motor plate inner face to output cap."""
+        """Ring gear body spans from motor plate inner face to the housing output face."""
         s = CFG.stack_up
-        body_height = s.z_output_cap - s.z_motor_plate_inner
-        assert abs(body_height - 48.0) < 0.01, (
-            f"Ring gear body height {body_height}mm != 48mm"
+        body_height = s.total_housing_depth - s.z_motor_plate_inner
+        assert abs(body_height - 51.0) < 0.01, (
+            f"Ring gear body height {body_height}mm != 51mm"
         )
 
     def test_all_housing_parts_same_od(self):
-        """Motor plate, ring gear body, and output cap should share the housing OD."""
+        """Motor plate and ring gear body should share the housing OD."""
         # This is enforced by all parts using cfg.housing.od, but verify the value
         assert CFG.housing.od == 140.0
 
@@ -218,7 +218,7 @@ class TestRadialClearances:
         d = CFG.disc
         hub = CFG.output_hub
         s = CFG.stack_up
-        pin_top_z = s.z_output_cap - hub.output_hub_pin_ceiling  # 56mm
+        pin_top_z = s.z_bearing_top - hub.output_hub_pin_ceiling  # 56mm
         pin_bottom_z = pin_top_z - d.output_pin_length  # 11mm
         clearance = pin_bottom_z - s.z_motor_plate_inner  # 11 - 10 = 1mm
         assert clearance > 0, (
@@ -231,25 +231,25 @@ class TestRadialClearances:
         d = CFG.disc
         hub = CFG.output_hub
         s = CFG.stack_up
-        pin_top_z = s.z_output_cap - hub.output_hub_pin_ceiling
+        pin_top_z = s.z_bearing_top - hub.output_hub_pin_ceiling
         pin_bottom_z = pin_top_z - d.output_pin_length
         assert pin_bottom_z <= s.z_disc1, (
             f"Pin bottom at Z={pin_bottom_z}mm doesn't reach disc 1 inner face "
             f"at Z={s.z_disc1}mm — disc 1 not fully engaged"
         )
 
-    def test_output_hub_clears_output_cap_bore(self):
-        """Output hub OD must be smaller than output cap center bore."""
+    def test_output_hub_clears_retention_lip_bore(self):
+        """Output hub OD must be smaller than the ring body's integral retention-lip bore."""
         hub = CFG.output_hub
         h = CFG.housing
         hub_od = hub.od  # 70.3mm
-        cap_bore = h.output_bearing_seat_dia - 2 * 2.0  # 86.15mm
-        clearance = cap_bore - hub_od
+        lip_bore = h.output_bearing_seat_dia - 2 * 2.0  # 86.15mm
+        clearance = lip_bore - hub_od
         assert clearance > 0, (
-            f"Hub OD {hub_od}mm >= cap bore {cap_bore}mm"
+            f"Hub OD {hub_od}mm >= lip bore {lip_bore}mm"
         )
         assert clearance >= 0.2, (
-            f"Hub-to-cap clearance only {clearance:.3f}mm (want >= 0.2mm)"
+            f"Hub-to-lip clearance only {clearance:.3f}mm (want >= 0.2mm)"
         )
 
     def test_arm_mount_holes_clear_output_pins(self):
@@ -330,7 +330,7 @@ class TestBearingRetention:
     """Verify all bearings are axially constrained."""
 
     def test_6814_retained_by_press_fit(self):
-        """6814 bearings are retained by press-fit into 90.15mm seat + output cap.
+        """6814 bearings are retained by press-fit into 90.15mm seat + integral lip.
 
         No shoulder ring is used — the disc envelope (~108mm) exceeds the
         6814 OD (90mm), so a shoulder cannot simultaneously clear the disc
@@ -347,13 +347,13 @@ class TestBearingRetention:
             f"Bearing seat gap {gap:.2f}mm too large for press fit"
         )
 
-    def test_6814_retained_by_output_cap(self):
-        """Output cap center bore must be smaller than 6814 OD on output side."""
+    def test_6814_retained_by_integral_lip(self):
+        """Ring body's integral lip bore must be smaller than 6814 OD on the output side."""
         h = CFG.housing
         b = CFG.bearings
-        cap_bore = h.output_bearing_seat_dia - 2 * 2.0  # 86.15mm
-        assert cap_bore < b.out_od, (
-            f"Cap bore {cap_bore}mm >= 6814 OD {b.out_od}mm — not retained"
+        lip_bore = h.output_bearing_seat_dia - 2 * 2.0  # 86.15mm
+        assert lip_bore < b.out_od, (
+            f"Lip bore {lip_bore}mm >= 6814 OD {b.out_od}mm — not retained"
         )
 
     def test_6003_retained_by_disc_bore(self):
@@ -469,7 +469,7 @@ class TestRingPinSpan:
 
 
 class TestHousingBoltEngagement:
-    """Verify M4 × 60mm bolt fits the housing stack with counterbore and nut pocket."""
+    """Verify M4 × 55mm bolt fits the housing stack with counterbore and nut pocket."""
 
     def test_bolt_reaches_nut(self):
         """Bolt shank must extend past the nut pocket floor."""
@@ -493,12 +493,12 @@ class TestHousingBoltEngagement:
         )
 
     def test_bolt_does_not_protrude(self):
-        """Bolt tip must not extend past the output cap outer face."""
+        """Bolt tip must not extend past the housing output face."""
         h = CFG.housing
         s = CFG.stack_up
         bolt_tip_z = h.bolt_counterbore_depth + h.bolt_length
         assert bolt_tip_z <= s.total_housing_depth, (
-            f"Bolt tip at {bolt_tip_z}mm protrudes past cap at {s.total_housing_depth}mm"
+            f"Bolt tip at {bolt_tip_z}mm protrudes past housing at {s.total_housing_depth}mm"
         )
 
     def test_counterbore_recesses_head(self):
@@ -538,79 +538,51 @@ class TestCadQueryAssemblyInterference:
 
     @pytest.fixture(scope="class")
     def housing_parts(self):
-        """Build and position the three housing parts."""
+        """Build and position the two housing parts."""
         cq = pytest.importorskip("cadquery")
         from src.motor_plate import build_motor_plate
         from src.ring_gear_body import build_ring_gear_body
-        from src.output_cap import build_output_cap
 
         s = CFG.stack_up
         mp = build_motor_plate()
         rgb = build_ring_gear_body().translate((0, 0, s.z_motor_plate_inner))
-        oc = build_output_cap().translate((0, 0, s.z_output_cap))
-        return mp, rgb, oc
+        return mp, rgb
 
     def test_motor_plate_ring_body_no_interference(self, housing_parts):
         """Motor plate and ring gear body must not overlap."""
-        mp, rgb, _ = housing_parts
+        mp, rgb = housing_parts
         interference = mp.intersect(rgb)
         vol = interference.val().Volume()
         assert vol < 1.0, (
             f"Motor plate / ring body interference = {vol:.1f}mm³"
         )
 
-    def test_ring_body_output_cap_no_interference(self, housing_parts):
-        """Ring gear body and output cap must not overlap."""
-        _, rgb, oc = housing_parts
-        interference = rgb.intersect(oc)
-        vol = interference.val().Volume()
-        assert vol < 1.0, (
-            f"Ring body / output cap interference = {vol:.1f}mm³"
-        )
-
-    def test_motor_plate_output_cap_no_interference(self, housing_parts):
-        """Motor plate and output cap must not overlap (they're far apart)."""
-        mp, _, oc = housing_parts
-        interference = mp.intersect(oc)
-        vol = interference.val().Volume()
-        assert vol < 1.0, (
-            f"Motor plate / output cap interference = {vol:.1f}mm³"
-        )
-
     @pytest.fixture(scope="class")
-    def output_hub_and_cap(self):
-        """Build and position output hub and cap."""
+    def output_hub_and_body(self):
+        """Build and position the output hub and the ring gear body."""
         cq = pytest.importorskip("cadquery")
         from src.output_hub import build_output_hub
-        from src.output_cap import build_output_cap
+        from src.ring_gear_body import build_ring_gear_body
 
         s = CFG.stack_up
         hub = build_output_hub().translate((0, 0, s.z_output_bearings))
-        cap = build_output_cap().translate((0, 0, s.z_output_cap))
-        return hub, cap
+        rgb = build_ring_gear_body().translate((0, 0, s.z_motor_plate_inner))
+        return hub, rgb
 
-    def test_output_hub_clears_output_cap(self, output_hub_and_cap):
-        """Output hub (rotating) must not interfere with output cap (static)."""
-        hub, cap = output_hub_and_cap
-        interference = hub.intersect(cap)
-        vol = interference.val().Volume()
-        assert vol < 1.0, (
-            f"Output hub / cap interference = {vol:.1f}mm³"
-        )
+    def test_output_hub_protrudes_through_housing(self, output_hub_and_body):
+        """Assembled hub output face must sit proud of the housing output face.
 
-    def test_output_hub_protrudes_through_cap(self, output_hub_and_cap):
-        """Assembled hub output face must sit proud of the cap's outer face.
-
-        Assembled-context counterpart to the part-level proud-face check: with no
-        radial interference (above), the hub top must clear the cap top by ≈
-        proud_above_cap so the arm link mounts above the chassis.
+        Assembled-context counterpart to the part-level proud-face check: the hub
+        top must clear the ring body's output face by ≈ proud_above_housing so the
+        arm link mounts above the chassis.  (Radial clearance is covered by
+        test_output_hub_clears_ring_body.)
         """
-        hub, cap = output_hub_and_cap
+        hub, rgb = output_hub_and_body
         hub_top = hub.val().BoundingBox().zmax
-        cap_top = cap.val().BoundingBox().zmax
-        proud = CFG.output_hub.proud_above_cap
-        assert abs((hub_top - cap_top) - proud) < 0.1, (
-            f"Hub top {hub_top:.2f}mm vs cap top {cap_top:.2f}mm — "
+        body_top = rgb.val().BoundingBox().zmax
+        proud = CFG.output_hub.proud_above_housing
+        assert abs((hub_top - body_top) - proud) < 0.1, (
+            f"Hub top {hub_top:.2f}mm vs housing top {body_top:.2f}mm — "
             f"expected hub proud by {proud}mm"
         )
 

@@ -14,7 +14,6 @@ from src.eccentric_shaft import build_eccentric_shaft
 from src.motor_plate import build_motor_plate
 from src.ring_gear_body import build_ring_gear_body
 from src.output_hub import build_output_hub
-from src.output_cap import build_output_cap
 from src.purchased_parts import (
     build_bearing_6003,
     build_bearing_6814,
@@ -93,10 +92,6 @@ def build_assembly() -> cq.Assembly:
     assy.add(build_output_hub(), name="output_hub",
              loc=cq.Location((0, 0, stack.z_output_bearings)))
 
-    # Output cap
-    assy.add(build_output_cap(), name="output_cap",
-             loc=cq.Location((0, 0, stack.z_output_cap)))
-
     # Output shaft pin (steel dowel)
     z_pin_base = stack.z_disc2 + cfg.disc.thickness - cfg.shaft.support_pin_hole_depth
     assy.add(build_shaft_support_pin(), name="shaft_support_pin",
@@ -123,7 +118,6 @@ def main() -> None:
         "motor_plate": build_motor_plate(),
         "ring_gear_body": build_ring_gear_body(),
         "output_hub": build_output_hub(),
-        "output_cap": build_output_cap(),
     }
 
     print(f"Exporting {len(parts)} parts to STL and STEP...")

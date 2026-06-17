@@ -1,4 +1,4 @@
-"""Shared outer profile for housing parts (ring gear body + output cap).
+"""Shared outer profile for housing parts (motor plate + ring gear body).
 
 Both parts present the same outer silhouette: 8 trapezoidal pillars (one per
 M4 housing bolt) connected only at the inner annulus, with reveal windows
@@ -30,7 +30,7 @@ def build_reveal_window_cutter(
 ) -> cq.Workplane:
     """Wall-removal cutter that leaves 8 trapezoidal pillars at the bolt angles.
 
-    Subtract this from any annular housing part (ring gear body, output cap)
+    Subtract this from any annular housing part (motor plate, ring gear body)
     to produce the shared outer profile.  The annulus inside ``pillar_inner_r``
     (57mm) is untouched — bearing seats and retention shoulders are preserved.
 

@@ -13,7 +13,6 @@ from src.eccentric_shaft import build_eccentric_shaft
 from src.motor_plate import build_motor_plate
 from src.ring_gear_body import build_ring_gear_body
 from src.output_hub import build_output_hub
-from src.output_cap import build_output_cap
 from src.purchased_parts import (
     build_bearing_6003,
     build_bearing_6814,
@@ -84,7 +83,7 @@ output = build_output_pins()
 output = output.translate((
     0,
     0,
-    stack.z_output_cap - cfg.output_hub.output_hub_pin_ceiling - cfg.disc.output_pin_length,
+    stack.z_bearing_top - cfg.output_hub.output_hub_pin_ceiling - cfg.disc.output_pin_length,
 ))
 show_object(output, name="output_pins", options={"color": "darkgray"})
 
@@ -112,11 +111,6 @@ output_hub = build_output_hub()
 output_hub = output_hub.translate((0, 0, stack.z_output_bearings))
 show_object(output_hub, name="output_hub", options={"color": "goldenrod", "alpha": 0.6})
 
-# ── Output cap ──────────────────────────────────────────────────
-output_cap = build_output_cap()
-output_cap = output_cap.translate((0, 0, stack.z_output_cap))
-show_object(output_cap, name="output_cap", options={"color": "slategray", "alpha": 0.4})
-
 # ── Output shaft pin (steel dowel) ───────────────────────────
 z_pin_base = stack.z_disc2 + cfg.disc.thickness - cfg.shaft.support_pin_hole_depth
 shaft_pin = build_shaft_support_pin()
@@ -129,7 +123,7 @@ bearing_625 = build_bearing_625()
 bearing_625 = bearing_625.translate((0, 0, stack.z_output_bearings))
 show_object(bearing_625, name="bearing_625", options={"color": "orange"})
 
-# ── Housing bolts (M4 × 60mm SHCS) ──────────────────────────
+# ── Housing bolts (M4 × 55mm SHCS) ──────────────────────────
 # Head top at Z=0 (motor plate outer face), recessed in counterbore.
 # Translate so head bottom aligns with counterbore depth.
 h = cfg.housing
@@ -139,8 +133,8 @@ housing_bolts = housing_bolts.translate((0, 0, cb_recess))
 show_object(housing_bolts, name="housing_bolts", options={"color": "dimgray"})
 
 # ── Housing nuts (M4 hex) ────────────────────────────────────
-# Sit at nut pocket floor inside output cap.
-z_nut = stack.z_output_cap + stack.output_wall - h.bolt_nut_depth
+# Seated in the ring gear body output-face pockets (floor at z_bearing_top=57).
+z_nut = stack.total_housing_depth - h.bolt_nut_depth
 housing_nuts = build_housing_nuts()
 housing_nuts = housing_nuts.translate((0, 0, z_nut))
 show_object(housing_nuts, name="housing_nuts", options={"color": "dimgray"})
