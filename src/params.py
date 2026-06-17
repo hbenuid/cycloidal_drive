@@ -107,20 +107,19 @@ class HousingParams:
     od: float = 140.0  # mm (sized for 3mm+ wall around counterbores/nut pockets)
     bore_dia: float = 116.0  # mm
     wall_thickness: float = 12.0  # mm (140 - 116) / 2
-    edge_chamfer: float = 1.5  # mm, 45° chamfer on the outer OD edges (both faces) of all 3 housing parts; hides elephant foot, breaks sharp corners. 0 disables.
+    edge_chamfer: float = 1.5  # mm, 45° chamfer on the outer OD edges (both faces) of both housing parts; hides elephant foot, breaks sharp corners. 0 disables.
     motor_plate_wall: float = 5.0  # mm
-    output_wall: float = 8.0  # mm (thickened for hex nut pockets); NOTE: vestigial — geometry uses StackUp.output_wall
     bolt_count: int = 8
     bolt_circle_dia: float = 125.0  # mm (outside 116mm bore)
     bolt_dia: float = 4.0  # mm (M4)
-    bolt_length: float = 60.0  # mm (M4 × 60 SHCS)
+    bolt_length: float = 55.0  # mm (M4 × 55 SHCS)
     bolt_head_dia: float = 7.0  # mm (M4 SHCS head)
     bolt_head_height: float = 4.0  # mm (M4 SHCS head)
     bolt_counterbore_dia: float = 7.4  # mm (head 7mm + 0.4mm clearance)
     bolt_counterbore_depth: float = 4.5  # mm (4mm head + 0.5mm recess)
     bolt_nut_pocket_af: float = 7.2  # mm (M4 nut 7mm AF + 0.2mm pocket clearance)
     bolt_nut_thickness: float = 3.2  # mm (M4 hex nut)
-    bolt_nut_depth: float = 4.0  # mm (pocket depth in output cap)
+    bolt_nut_depth: float = 4.0  # mm (pocket depth in ring gear body output face + hub arm-mount)
     output_bearing_seat_dia: float = 90.15  # mm (press fit for 6814 outer race)
 
 
@@ -153,8 +152,8 @@ class OutputHubParams:
     output_hub_pin_ceiling: float = 1.0  # mm, closed-top thickness above blind pin holes
 
     # Arm-link interface: output face protrudes past the chassis so the arm link
-    # clears the stationary output cap (cap outer face is at total_housing_depth).
-    proud_above_cap: float = 2.0  # mm, output face protrudes this far past cap outer face (z=65); trimmed 3→2, keeps a 2mm air gap clear of the cap
+    # clears the stationary housing (housing output face is at total_housing_depth).
+    proud_above_housing: float = 2.0  # mm, output face protrudes this far past the housing output face (z=60); keeps a 2mm air gap clear of the housing
     arm_mount_bolt_circle_dia: float = 50.0  # mm, arm-link bolt circle (r=25, clears center + output pins)
     arm_mount_bolt_count: int = 4  # 4× M4 clearance holes (bolts thread into captive nuts)
     arm_mount_angle_offset_deg: float = 45.0  # offset from output pins (0/90/180/270) so nut pockets clear them
@@ -205,7 +204,7 @@ class StackUp:
     inter_disc_spacer: float = 2.0
     output_clearance: float = 2.0  # gap between disc 2 and output bearings
     output_bearing_total: float = 20.0  # 2 x 6814 width
-    output_wall: float = 8.0  # depth pinned by M4×60 bolt (counterbore 4.5 + 60 = 64.5mm); cannot shrink without bolt protrusion
+    output_wall: float = 3.0  # ring gear body output-end wall: bearing-retention lip + captive nut-pocket zone. M4×55 bolt (counterbore 4.5 + 55 = 59.5mm) lands inside the 60mm depth with full nut engagement
 
     @property
     def z_motor_plate_inner(self) -> float:
@@ -229,12 +228,12 @@ class StackUp:
         return self.z_disc2 + self.disc_thickness + self.output_clearance  # 37mm
 
     @property
-    def z_output_cap(self) -> float:
-        return self.z_output_bearings + self.output_bearing_total  # 57mm
+    def z_bearing_top(self) -> float:
+        return self.z_output_bearings + self.output_bearing_total  # 57mm (6814 stack top / retention-lip start)
 
     @property
     def total_housing_depth(self) -> float:
-        return self.z_output_cap + self.output_wall  # 65mm
+        return self.z_bearing_top + self.output_wall  # 60mm
 
 
 @dataclass

@@ -1,18 +1,29 @@
-"""Ring gear body — main housing cylinder with bearing seat and pin retention.
+"""Ring gear body — housing cylinder, bearing seat, integral retention lip, nut pockets.
 
 3D-printed PETG housing part.  Spans from the motor plate inner face
-(global Z=9mm) to the output cap (global Z=57mm).  Local Z=0 at the
-input face.
+(global Z=9mm) to the housing output face (global Z=60mm).  Local Z=0 at
+the input face.  This is the output end of the housing — the separate
+output cap has been removed and its two structural jobs folded in here.
 
 Stepped internal bore:
   Z=0  to Z=28  — 116mm bore (disc orbit clearance + 2mm output gap)
   Z=28 to Z=48  — 90.15mm bore (press-fit seat for 2× 6814-2RS output
                    bearings)
+  Z=48 to Z=51  — 86.15mm bore (output hub clearance).  The 90.15→86.15
+                   step at Z=48 is the integral retention lip (2mm radial)
+                   that blocks the 90mm 6814 outer races from the output side.
 
-Bearing axial retention relies on press-fit into the 90.15mm seat and
-the output cap clamping the outer race from the far side.  No shoulder
-ring is used — the disc envelope (~108mm) exceeds the 6814 OD (90mm),
-so a shoulder cannot simultaneously clear the disc and block the bearing.
+Output-bearing retention: press-fit into the 90.15mm seat plus the integral
+lip from the output side.  No input shoulder ring is used — the disc
+envelope (~108mm) exceeds the 6814 OD (90mm), so a shoulder cannot
+simultaneously clear the disc and block the bearing.  Bearings insert from
+the input side and seat up against the lip; they stay removable toward the
+disc side (not trapped).
+
+Captive housing nuts: 8× hex pockets (4mm deep) on the output face seat the
+M4 nuts for the M4×55 housing bolts (heads counterbored in the motor plate).
+Each pocket is backed by the full-height bolt pillar, so the thin output wall
+does not limit the pocket depth.
 
 Ring-pin retention (dual-end):
   35mm pins sit 3.5mm in motor plate through-holes and 3.5mm into the
@@ -22,7 +33,7 @@ Ring-pin retention (dual-end):
 
 Other features:
   - 21 ring-pin blind holes on 108mm circle (4.20mm clearance dia, 31.5mm deep)
-  - 8 M4 housing-bolt through-holes on 125mm circle
+  - 8 M4 housing-bolt through-holes on 125mm circle + output-face nut pockets
 
 Assembly: insert ring pins through the motor plate's through-holes,
 then slide the ring gear body onto the protruding pin ends.  Chamfered
@@ -56,7 +67,7 @@ def build_ring_gear_body(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
     stack = cfg.stack_up
 
     # ── Dimensions ────────────────────────────────────────────────
-    body_height = stack.z_output_cap - stack.z_motor_plate_inner  # 48mm
+    body_height = stack.total_housing_depth - stack.z_motor_plate_inner  # 51mm (now includes the output-end wall the cap used to provide)
     housing_r = h.od / 2.0  # 67mm
     bore_r = h.bore_dia / 2.0  # 58mm (116mm bore)
     bearing_seat_r = h.output_bearing_seat_dia / 2.0  # 45.075mm
@@ -98,6 +109,21 @@ def build_ring_gear_body(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
         .extrude(bearing_h)
     )
     result = result.cut(bearing_bore)
+
+    # ── 3b. Hub-clearance bore + integral retention lip: Z=48 to top (86.15mm) ──
+    # Above the bearing seat the bore narrows to 86.15mm, leaving a 2mm radial
+    # lip.  The 90.15→86.15 step at Z=48 retains the 6814 outer races from the
+    # output side (the removed cap's job, now printed in); 86.15mm still clears
+    # the 70.3mm output hub with ~7.9mm radial gap.
+    lip_bore_dia = h.output_bearing_seat_dia - 2 * 2.0  # 86.15mm
+    bearing_seat_top = bearing_z + bearing_h  # 48mm (local)
+    lip_bore = (
+        cq.Workplane("XY")
+        .workplane(offset=bearing_seat_top)
+        .circle(lip_bore_dia / 2.0)
+        .extrude(body_height - bearing_seat_top)
+    )
+    result = result.cut(lip_bore)
 
     # ── 4. Ring-pin blind holes (21×, press-fit) ──────────────────
     # Holes go from Z=0 (input face) through the bore zone (28mm,
@@ -158,11 +184,32 @@ def build_ring_gear_body(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
     # Cut away the outer wall over the full body height, keeping only
     # trapezoidal pillars around each housing bolt.  The motor plate seats
     # against the 8 pillar top faces (no continuous rim).  Shared with the
-    # output cap so both parts present the same outer silhouette.
+    # motor plate so both parts present the same outer silhouette.
     result = result.cut(build_reveal_window_cutter(cfg, body_height))
 
-    # ── 7. Bevel the outer silhouette (both end faces mate → verticals only) ──
-    result = chamfer_outer_silhouette(result, cfg, external_face=None)
+    # ── 7. Captive hex nut pockets on the output face (8×, M4 housing nuts) ──
+    # Ported from the removed output cap: each pocket opens on the output face
+    # (Z=body_height) and seats an M4 nut for the housing bolt.  Unlike a
+    # standalone cap, each pocket is backed by the full-height bolt pillar, so
+    # the thin output wall imposes no floor constraint.  Hex flat faces radially
+    # outward to maximise the pocket-to-OD wall.
+    nut_circ_dia = h.bolt_nut_pocket_af / math.cos(math.radians(30))  # ~8.31mm
+    for angle, pt in zip(bolt_angles, bolt_pts):
+        hex_pocket = (
+            cq.Workplane("XY")
+            .workplane(offset=body_height - h.bolt_nut_depth)
+            .center(pt[0], pt[1])
+            .transformed(rotate=(0, 0, math.degrees(angle)))
+            .polygon(6, nut_circ_dia)
+            .extrude(h.bolt_nut_depth)
+        )
+        result = result.cut(hex_pocket)
+
+    # ── 8. Bevel the outer silhouette ──────────────────────────────
+    # The output end face (Z=body_height) is now external (cap removed) → bevel
+    # its full outer perimeter + barrel verticals.  The motor-side face (Z=0)
+    # mates against the motor plate → left sharp.
+    result = chamfer_outer_silhouette(result, cfg, external_face=">Z")
 
     return result
 

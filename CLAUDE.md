@@ -178,12 +178,12 @@ Located in the output hub, supporting the eccentric shaft's free end via the 5mm
 | Parameter | Value |
 |---|---|
 | Quantity | 8 |
-| Type | M4 × 60mm socket head cap screw (ISO 4762) |
+| Type | M4 × 55mm socket head cap screw (ISO 4762) |
 | Head ⌀ | 7.0mm |
 | Head height | 4.0mm |
 | Shank ⌀ | 4.0mm |
-| Shank length | 60mm |
-| Retained by | Counterbore in motor plate, M4 hex nut in output cap |
+| Shank length | 55mm |
+| Retained by | Counterbore in motor plate, M4 hex nut captured in ring gear body output face |
 
 ### 3.5 Housing Nuts
 
@@ -193,14 +193,14 @@ Located in the output hub, supporting the eccentric shaft's free end via the 5mm
 | Type | M4 hex nut |
 | Width across flats | 7.0mm (standard M4) |
 | Thickness | 3.2mm |
-| Captured in | Hex nut pocket in output cap outer face (pocket sized at 7.2mm AF for clearance) |
+| Captured in | Hex nut pocket in ring gear body output face (pocket sized at 7.2mm AF for clearance) |
 
 ### 3.6 Other Fasteners
 
 | Item | Spec | Qty | Purpose |
 |---|---|---|---|
 | Motor mounting bolts | M3 × 10mm socket head (5.3mm head ⌀ × 3mm head height, 13mm total) | 4 | Mount motor to housing (6mm through plate + 4mm thread engagement, head flush in 3mm counterbore on inner face) |
-| Arm-mount bolts | M4 socket head, length per arm link + ~30mm hub (≈M4 × 40–50mm) | 4 | Arm link → output hub; drops through the proud face and threads into a captive M4 nut on the hub inner face |
+| Arm-mount bolts | M4 socket head, length per arm link + ~25mm hub (≈M4 × 35–45mm) | 4 | Arm link → output hub; drops through the proud face and threads into a captive M4 nut on the hub inner face |
 | Arm-mount nuts | M4 hex nut | 4 | Captive in the output-hub inner-face hex pockets (7.2mm AF × 4mm); install before pressing hub through 6814 bearings |
 
 ---
@@ -219,15 +219,15 @@ Measured from motor mounting face inward:
 | Cycloidal disc 2 + 6003 bearing | 10mm | 35mm |
 | Clearance to output bearing | 2mm | 37mm |
 | Output bearings (2 × 6814) | 20mm | 57mm |
-| Output-side housing wall | 8mm | 65mm |
+| Output-side housing wall (retention lip + nut pockets) | 3mm | 60mm |
 
-**Total housing depth: ~65mm** (not including motor body protrusion)
+**Total housing depth: ~60mm** (not including motor body protrusion)
 
-**Output hub protrusion:** the rotating output hub extends **2mm proud of the 65mm housing** (its output face is at z=67mm) so the arm link clears the stationary output cap. This is an output-side stub on the rotating member — it does not change the housing depth or the 8mm output wall; the cap, ring gear body, and motor plate are unaffected.
+**Output hub protrusion:** the rotating output hub extends **2mm proud of the 60mm housing** (its output face is at z=62mm) so the arm link clears the stationary housing output face. This is an output-side stub on the rotating member — it does not change the housing depth or the 3mm output wall; the ring gear body and motor plate are unaffected.
 
-**Housing depth is bolt-pinned:** the 65mm axial depth cannot be shortened without changing a purchased part. The M4×60 housing bolt occupies counterbore 4.5mm + 60mm = 64.5mm from the motor face, so any housing shorter than ~64.5mm would let the bolt tip protrude past the output cap (`tests/test_assembly_clearances.py::test_bolt_does_not_protrude`). Material/space savings therefore come from the rotating hub (lightening recess + 1mm-shorter proud), not the housing envelope.
+**Housing depth follows the bolt length:** the output cap was removed and its two jobs (6814 retention + captive nuts) folded into the ring gear body, shrinking the housing 65mm → 60mm and dropping the bolt M4×60 → M4×55. The M4×55 bolt occupies counterbore 4.5mm + 55mm = 59.5mm from the motor face, landing inside the 60mm depth with full nut engagement and no protrusion past the output face (`tests/test_assembly_clearances.py::test_bolt_does_not_protrude`). A shorter housing would need a shorter standard bolt, but the next size down (M4×50) is too short to reach the captive nut — so 60mm is the practical floor.
 
-**Total assembly depth including NEMA 17:** ~65mm housing + 48mm motor body = **~113mm** (motor pilot recesses 2mm into the motor plate's outer face — already inside the 65mm housing depth, so it doesn't add or subtract from the total). The 2mm hub stub adds to the output-side interface but not to the housing/motor envelope.
+**Total assembly depth including NEMA 17:** ~60mm housing + 48mm motor body = **~108mm** (motor pilot recesses 2mm into the motor plate's outer face — already inside the 60mm housing depth, so it doesn't add or subtract from the total). The 2mm hub stub adds to the output-side interface but not to the housing/motor envelope.
 
 ---
 
@@ -238,39 +238,38 @@ Measured from motor mounting face inward:
 | Dimension | Value |
 |---|---|
 | OD | 140mm |
-| Depth | ~65mm (housing only) |
+| Depth | ~60mm (housing only) |
 | Housing bore (ring pin area) | 116mm |
 | Output bearing seat OD | 90.15mm (press fit for 6814 outer race) |
 | Output bearing seat depth | 20mm (for 2 × 6814) |
 
 ### 5.2 Housing Split
 
-Recommend splitting the housing into 3 printed parts:
+The housing splits into 2 printed parts (the former output cap is gone — its two structural jobs are folded into the ring gear body):
 
 1. **Motor plate** — NEMA 17 bolt pattern, 15mm shaft bore for motor shaft pass-through, 21 ring-pin through-holes (4.20mm ⌀), 8× M4 counterbore holes (7.4mm ⌀ × 4.5mm deep) on outer face. Plate is 9mm thick uniform — the previous Ø100mm × 1mm inner-face recess has been replaced by trimming the entire plate to that level. M3 motor-bolt heads sit flush with the inner face in 3mm counterbores.
-2. **Ring gear body** — Main cylinder (48mm tall) with 21 ring-pin blind holes (4.20mm ⌀, 31.5mm deep, chamfered entry), output bearing seat bore, 8× M4 clearance through-holes. Lateral pin retention is provided by the motor plate (9mm through-holes) plus 3.5mm engagement at the bearing-zone end. No shoulder ring — 6814 bearings retained by press-fit + output cap.
-3. **Output cap** — Ø86.15mm center bore (2mm radial lip retains 6814 outer races against the output cap face), seals housing, 8× hex nut pockets (7.2mm AF × 4.0mm deep) on outer face.
+2. **Ring gear body** — Main cylinder (51mm tall) with 21 ring-pin blind holes (4.20mm ⌀, 31.5mm deep, chamfered entry), output bearing seat bore, 8× M4 clearance through-holes. Lateral pin retention is provided by the motor plate (9mm through-holes) plus 3.5mm engagement at the bearing-zone end. No input shoulder ring — the 6814 bearings are retained by press-fit into the 90.15mm seat plus an **integral output-end lip** (the bore steps 90.15→86.15mm at z=57, a 2mm radial lip over the 90mm outer races; bearings insert from the input side and seat against it). The output face also carries **8× captive hex nut pockets** (7.2mm AF × 4.0mm deep) for the housing-bolt nuts — each backed by the full-height bolt pillar, so the thin 3mm output wall imposes no floor constraint.
 
-**Shared outer profile**: all three parts share the same outer silhouette — an 8-pillar / 8-window pattern around the bolt circle (pillars 18mm wide at the bore, 10mm wide at the OD, one per M4 bolt). The motor plate and output cap sit directly on the ring gear body's pillar faces; no continuous rim anywhere. The profile is generated by a single shared cutter (`src/helpers/housing_profile.py:build_reveal_window_cutter`) that every housing builder subtracts from its base solid, guaranteeing all three parts stay geometrically aligned. The central solid regions (motor mount on the plate, bearing-retention annulus on the cap) are untouched.
+**Shared outer profile**: both parts share the same outer silhouette — an 8-pillar / 8-window pattern around the bolt circle (pillars 18mm wide at the bore, 10mm wide at the OD, one per M4 bolt). The motor plate sits directly on the ring gear body's pillar faces; no continuous rim anywhere. The profile is generated by a single shared cutter (`src/helpers/housing_profile.py:build_reveal_window_cutter`) that every housing builder subtracts from its base solid, guaranteeing both parts stay geometrically aligned. The central solid regions (motor mount on the plate, bearing-retention annulus + lip on the ring gear body) are untouched.
 
-**Outer-edge chamfer** (`cfg.housing.edge_chamfer`, default 1.5mm): a shared post-process helper (`src/helpers/housing_profile.py:chamfer_outer_silhouette`) breaks the external edges of all three parts; **faces that mate against an adjacent part are left sharp** so the stack still seats flush. Applied per part after the windows are cut:
+**Outer-edge chamfer** (`cfg.housing.edge_chamfer`, default 1.5mm): a shared post-process helper (`src/helpers/housing_profile.py:chamfer_outer_silhouette`) breaks the external edges of both parts; **faces that mate against an adjacent part are left sharp** so the stack still seats flush. Applied per part after the windows are cut:
 
-- **Motor plate** and **output cap** — the *entire* outer perimeter of the externally-facing end face (motor mounting face / output back face) is beveled: pillar outer arcs, the inner arcs between pillars, and the pillar side edges (taken from the face's outer wire, so internal bolt/shaft/pilot/nut-pocket holes stay sharp), plus the 8 pillar outer **vertical** corners. The inner (mating) face perimeter stays sharp.
-- **Ring gear body** — both end faces mate, so only the 8 pillar outer **vertical** corners are beveled (no end-rim chamfer). Its window cut-outs are left crisp: the stepped bore splits the inner window edges into short segments that the OCCT chamfer kernel cannot bevel (`StdFail_NotDone`).
+- **External end faces** — the motor plate's motor-mounting face and the ring gear body's output face are external (nothing seats on them). Each has its *entire* outer-wire perimeter beveled: pillar outer arcs, the inner arcs between pillars, and the pillar side edges (taken from the face's outer wire, so internal bolt/shaft/pilot/nut-pocket holes stay sharp), plus the 8 pillar outer **vertical** corners.
+- **Mating faces** — the motor plate's inner face and the ring gear body's motor-side face seat against each other and are left sharp so the stack beds flush (only the shared barrel verticals are beveled there). The ring body's output-face bevel uses the face outer wire, which the OCCT kernel chamfers cleanly even with the stepped lip bore inboard — the old `StdFail_NotDone` limitation only hit end-rims that crossed the window edges.
 
-On the assembled stack this reads as one continuously beveled outer barrel with flush, sharp seams at the part interfaces. Set `edge_chamfer = 0` to disable; keep ≤2mm to preserve the nut-pocket-to-OD wall.
+On the assembled stack this reads as one continuously beveled outer barrel with flush, sharp seams at the part interface. Set `edge_chamfer = 0` to disable; keep ≤2mm to preserve the nut-pocket-to-OD wall.
 
-Parts joined with 8× M4 × 60mm socket head cap screws on a 125mm bolt circle. Bolt heads sit in counterbores on the motor plate; M4 hex nuts captured in hex pockets on the output cap.
+Parts joined with 8× M4 × 55mm socket head cap screws on a 125mm bolt circle. Bolt heads sit in counterbores on the motor plate; M4 hex nuts captured in hex pockets on the ring gear body's output face.
 
 ### 5.3 Output Hub / Plate
 
 A separate printed PETG part (3D-printed; an aluminum version is also viable) that:
 
-- Has 4× blind clearance holes (4.20mm × 19mm deep) on the 60mm pin circle for 4mm dowel pins, closed by a 1mm ceiling on the output-cap side. Depth references the 20mm bearing-grip zone (`cfg.stack_up.output_bearing_total`), so it stays fixed regardless of the proud extension
+- Has 4× blind clearance holes (4.20mm × 19mm deep) on the 60mm pin circle for 4mm dowel pins, closed by a 1mm ceiling on the output side. Depth references the 20mm bearing-grip zone (`cfg.stack_up.output_bearing_total`), so it stays fixed regardless of the proud extension
 - Passes through the 2× 6814 bearing inner races (hub OD = 70.3mm; 70mm bearing inner race + 0.3mm interference grip)
-- **Output face protrudes 2mm past the chassis.** The hub is 30mm tall (`output_bearing_total` 20mm + `output_wall` 8mm + `proud_above_cap` 2mm), so its output face sits at **z=67mm — 2mm proud of the output cap's outer face (z=65)**. The rotating arm-link interface therefore clears the stationary cap with a 2mm air gap (no rubbing). The proud section passes through the cap's Ø86.15mm bore with ~7.9mm radial clearance. Tune via `cfg.output_hub.proud_above_cap` (trimmed 3→2mm to save hub material)
+- **Output face protrudes 2mm past the chassis.** The hub is 25mm tall (`output_bearing_total` 20mm + `output_wall` 3mm + `proud_above_housing` 2mm), so its output face sits at **z=62mm — 2mm proud of the housing output face (z=60)**. The rotating arm-link interface therefore clears the stationary housing with a 2mm air gap (no rubbing). The proud section passes through the ring body's integral-lip Ø86.15mm bore with ~7.9mm radial clearance. Tune via `cfg.output_hub.proud_above_housing`
 - **Arm-link mount:** 4× M4 clearance through-holes (4.4mm ⌀) on a 50mm bolt circle, offset 45° from the output pins. Each hole runs the full height into a **captive M4 hex-nut pocket (7.2mm AF × 4mm deep) on the inner face** — the arm-link bolt drops from the proud face, through the hub, and threads into the trapped nut (no threads cut in PETG). Drop the 4 nuts into the pockets **before** pressing the hub through the 6814 bearings. Tune via `cfg.output_hub.arm_mount_*`
-- The central 6mm shaft clearance bore is capped at the bearing-grip zone (runs z=37→57 only). Above that the block is solid **except for a central lightening recess** (Ø36mm, ~9mm deep) cut into the proud arm-mount face — it reclaims ~9cm³ of otherwise-dead material; the arm link bears on the r=25→35mm annulus around the bolt circle. Tune via `cfg.output_hub.arm_mount_pocket_dia` (set 0 for a fully sealed face)
+- The central 6mm shaft clearance bore is capped at the bearing-grip zone (runs z=37→57 only). Above that the block is solid **except for a central lightening recess** (Ø36mm, ~4mm deep) cut into the proud arm-mount face — it reclaims ~4cm³ of otherwise-dead material; the arm link bears on the r=25→35mm annulus around the bolt circle. Tune via `cfg.output_hub.arm_mount_pocket_dia` (set 0 for a fully sealed face)
 - Houses a 625 bearing seat (Ø16.2mm × 5mm) on the inner-face side to support the eccentric shaft output end
 
 ---
@@ -357,10 +356,10 @@ Generate this profile at high resolution (e.g., 1000+ points per full revolution
 | 5 | Ring pins | 4mm × 35mm ground dowel h6 | 25 | $8–12 |
 | 6 | Output pins | 4mm × 45mm ground steel dowel pin, h6 | 4 | $2–4 |
 | 7 | Motor bolts | M3 × 10mm socket head (13mm total) | 4 | $1–2 |
-| 8 | Housing bolts | M4 × 60mm socket head cap screw | 8 | $2–4 |
+| 8 | Housing bolts | M4 × 55mm socket head cap screw | 8 | $2–4 |
 | 8a | Housing nuts | M4 hex nut | 8 | $1 |
 | 9 | Shaft support pin | 5mm × 20mm ground steel dowel pin, h6 | 1 | $0.50–1 |
-| 10 | Arm-mount bolts | M4 socket head, length per arm link + ~30mm hub (≈M4 × 40–50mm) | 4 | $1–2 |
+| 10 | Arm-mount bolts | M4 socket head, length per arm link + ~25mm hub (≈M4 × 35–45mm) | 4 | $1–2 |
 | 10a | Arm-mount nuts | M4 hex nut (captive in output hub inner face) | 4 | $1 |
 | | | | **Total** | **~$47–87** |
 
@@ -376,13 +375,12 @@ src/
   profiles.py            # Epitrochoid math (pure numpy)
   eccentric_shaft.py     # PETG-printed shaft with two offset lobes + D-bore
   cycloidal_disc.py      # Epitrochoid profile disc (print 2 copies)
-  ring_gear_body.py      # Main housing cylinder + bearing seat + reveal windows
+  ring_gear_body.py      # Housing cylinder + bearing seat + integral retention lip + output-face nut pockets + reveal windows
   motor_plate.py         # NEMA 17 mount + ring pin holes
-  output_cap.py          # Output-side cap + nut pockets
   output_hub.py          # Output plate (proud arm-mount face + M4 captive-nut holes) through 6814 bearings + 625 seat
   purchased_parts.py     # Simplified bearings, motor, pins for visualization
   helpers/
-    housing_profile.py   # Shared 8-pillar / 8-window cutter (motor plate, ring gear body, output cap)
+    housing_profile.py   # Shared 8-pillar / 8-window cutter (motor plate, ring gear body)
 assembly.py              # OCP CAD Viewer — all parts positioned per stack-up
 export.py                # Export STEP + STL to export/
 ```

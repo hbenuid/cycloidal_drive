@@ -229,12 +229,12 @@ def build_output_pins(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
 
 
 # -------------------------------------------------------------------
-# Housing bolts — 8× M4 × 60mm SHCS on 125mm bolt circle
+# Housing bolts — 8× M4 × 55mm SHCS on 125mm bolt circle
 # -------------------------------------------------------------------
 
 
 def build_housing_bolts(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
-    """8× M4 × 60mm socket head cap screws on the housing bolt circle.
+    """8× M4 × 55mm socket head cap screws on the housing bolt circle.
 
     Built with head top at Z=0 (motor plate outer face).  Head sits in
     the counterbore; shank extends in +Z through the housing.
@@ -255,7 +255,7 @@ def build_housing_bolts(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
         .extrude(h.bolt_head_height)
     )
 
-    # Cylindrical shank: 4mm ⌀ × 60mm, from Z=head_height onward
+    # Cylindrical shank: 4mm ⌀ × 55mm, from Z=head_height onward
     shanks = (
         cq.Workplane("XY")
         .workplane(offset=h.bolt_head_height)

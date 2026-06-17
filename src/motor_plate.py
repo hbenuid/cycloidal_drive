@@ -152,9 +152,8 @@ def build_motor_plate(cfg: DriveConfig = DEFAULT_CONFIG) -> cq.Workplane:
 
     # ── 8. Reveal windows — match shared housing profile ────────────
     # Cuts the outer ring (58→70mm radius) into 8 trapezoidal pillars
-    # aligned with the ring gear body and output cap pillars.  The
-    # central disc (motor mount, pilot, ring-pin holes, inner pocket)
-    # is untouched.
+    # aligned with the ring gear body pillars.  The central disc (motor
+    # mount, pilot, ring-pin holes, inner pocket) is untouched.
     result = result.cut(build_reveal_window_cutter(cfg, plate_thickness))
 
     # ── 9. Bevel the outer silhouette ──────────────────────────────

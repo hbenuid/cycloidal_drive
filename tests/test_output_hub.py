@@ -176,36 +176,36 @@ class TestCadQuerySolid:
         )
 
     def test_height(self, hub_solid):
-        """Z height = bearing grip + cap wall + proud extension (31mm).
+        """Z height = bearing grip + output wall + proud extension (25mm).
 
-        The hub now rises past the cap so the arm-mount face is proud of the chassis.
+        The hub rises past the housing so the arm-mount face is proud of the chassis.
         """
         bb = hub_solid.val().BoundingBox()
         z_size = bb.zmax - bb.zmin
         stack = CFG.stack_up
         hub = CFG.output_hub
-        expected = stack.output_bearing_total + stack.output_wall + hub.proud_above_cap  # 31mm
+        expected = stack.output_bearing_total + stack.output_wall + hub.proud_above_housing  # 25mm
 
         assert abs(z_size - expected) < 0.1, (
             f"Z extent {z_size:.2f}mm, expected {expected:.2f}mm"
         )
 
-    def test_output_face_proud_of_cap(self, hub_solid):
-        """Top (output) face must sit proud of the output cap's outer face.
+    def test_output_face_proud_of_housing(self, hub_solid):
+        """Top (output) face must sit proud of the housing output face.
 
         Hub bottom is at global z_output_bearings; its top must clear
-        total_housing_depth (cap outer face) by proud_above_cap.
+        total_housing_depth (housing output face) by proud_above_housing.
         """
         bb = hub_solid.val().BoundingBox()
         stack = CFG.stack_up
         hub = CFG.output_hub
         # Solid is built at local Z; translated to z_output_bearings in the assembly.
         global_top = stack.z_output_bearings + bb.zmax
-        expected_top = stack.total_housing_depth + hub.proud_above_cap  # 65 + 3 = 68
+        expected_top = stack.total_housing_depth + hub.proud_above_housing  # 60 + 2 = 62
 
         assert abs(global_top - expected_top) < 0.1, (
             f"Output face at z={global_top:.2f}mm, expected {expected_top:.2f}mm "
-            f"({hub.proud_above_cap}mm proud of cap at z={stack.total_housing_depth}mm)"
+            f"({hub.proud_above_housing}mm proud of housing at z={stack.total_housing_depth}mm)"
         )
 
     def test_arm_mount_holes_through(self, hub_solid):
@@ -272,7 +272,7 @@ class TestCadQuerySolid:
         )
 
     def test_pin_holes_blind_from_output_face(self, hub_solid):
-        """Pin holes must be blind from the output-cap side — a 1mm ceiling stays solid.
+        """Pin holes must be blind from the output side — a 1mm ceiling stays solid.
 
         Sample a point on the 60mm pin circle at Z near the top of the hub.
         That point should be inside the hub solid (not inside a pin hole).
@@ -346,7 +346,7 @@ class TestCadQuerySolid:
         h = CFG.housing
         hub_r = hub.od / 2.0
         bearing_grip = stack.output_bearing_total  # 20mm — shaft bore depth
-        height = bearing_grip + stack.output_wall + hub.proud_above_cap  # 31mm total
+        height = bearing_grip + stack.output_wall + hub.proud_above_housing  # 25mm total
         shaft_r = hub.shaft_clearance_bore / 2.0
 
         # Upper: full cylinder minus the shaft bore (only as deep as the grip zone)

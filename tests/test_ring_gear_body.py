@@ -26,15 +26,16 @@ CFG = DEFAULT_CONFIG
 class TestRingGearBodyDimensions:
 
     def test_body_height_matches_stackup(self):
-        """Body height must equal z_output_cap - z_motor_plate_inner."""
+        """Body height must equal total_housing_depth - z_motor_plate_inner."""
         stack = CFG.stack_up
-        expected = stack.z_output_cap - stack.z_motor_plate_inner  # 48mm
+        expected = stack.total_housing_depth - stack.z_motor_plate_inner  # 51mm
         actual = (
             stack.input_clearance
             + stack.disc_thickness * 2
             + stack.inter_disc_spacer
             + stack.output_clearance
             + stack.output_bearing_total
+            + stack.output_wall
         )
         assert abs(actual - expected) < 0.01, (
             f"Body height {actual}mm != expected {expected}mm"
@@ -134,7 +135,7 @@ class TestRingGearBodyDimensions:
         With the shoulder ring removed, the step from 116mm bore down to
         90.15mm bearing seat is the only geometric transition.  The 6814
         bearings (90mm OD) are retained axially by press-fit into the
-        seat plus the output cap on the far side.
+        seat plus the ring body's integral lip on the far side.
         """
         h = CFG.housing
         assert h.output_bearing_seat_dia < h.bore_dia, (
@@ -153,6 +154,35 @@ class TestRingGearBodyDimensions:
         gap = h.output_bearing_seat_dia - b.out_od
         assert gap < 0.5, (
             f"Bearing seat gap {gap:.2f}mm too large for press fit"
+        )
+
+    def test_integral_lip_blocks_6814(self):
+        """The integral retention lip bore must be smaller than the 6814 OD."""
+        h = CFG.housing
+        b = CFG.bearings
+        lip_bore = h.output_bearing_seat_dia - 2 * 2.0  # 86.15mm
+        assert lip_bore < b.out_od, (
+            f"Lip bore {lip_bore}mm >= 6814 OD {b.out_od}mm — bearing not retained"
+        )
+
+    def test_integral_lip_clears_hub(self):
+        """The integral lip bore must clear the output hub OD with >=0.2mm."""
+        h = CFG.housing
+        hub = CFG.output_hub
+        lip_bore = h.output_bearing_seat_dia - 2 * 2.0  # 86.15mm
+        clearance = lip_bore - hub.od
+        assert clearance >= 0.2, (
+            f"Lip bore {lip_bore}mm vs hub OD {hub.od}mm — clearance "
+            f"{clearance:.2f}mm < 0.2mm"
+        )
+
+    def test_lip_retention_shoulder_width(self):
+        """The lip must present a >=2mm radial shoulder against the 6814 outer race."""
+        h = CFG.housing
+        lip_bore = h.output_bearing_seat_dia - 2 * 2.0  # 86.15mm
+        shoulder = (h.output_bearing_seat_dia - lip_bore) / 2.0  # 2.0mm
+        assert shoulder >= 2.0 - 1e-6, (
+            f"Lip shoulder {shoulder:.2f}mm < 2mm radial"
         )
 
     def test_housing_bolts_outside_bore(self):
@@ -279,7 +309,7 @@ class TestRingGearBodyDimensions:
         )
 
     def test_windows_span_full_body_height(self):
-        """Reveal windows extend from input face through to the output cap.
+        """Reveal windows extend from input face through to the output face.
 
         The continuous rim was eliminated — the motor plate now seats only
         on the 8 pillar top faces.  The bearing seat (Z=28 to Z=48) is
@@ -287,7 +317,7 @@ class TestRingGearBodyDimensions:
         windows cut only the annulus between the 116mm bore and the OD.
         """
         stack = CFG.stack_up
-        body_height = stack.z_output_cap - stack.z_motor_plate_inner  # 48mm
+        body_height = stack.total_housing_depth - stack.z_motor_plate_inner  # 51mm
         window_h = body_height
         assert window_h == body_height, (
             f"Window height {window_h}mm != body height {body_height}mm"
@@ -386,11 +416,11 @@ class TestCadQuerySolid:
         )
 
     def test_height(self, body_solid):
-        """Z height should match the stack-up (48mm)."""
+        """Z height should match the stack-up (51mm)."""
         bb = body_solid.val().BoundingBox()
         z_size = bb.zmax - bb.zmin
         stack = CFG.stack_up
-        expected = stack.z_output_cap - stack.z_motor_plate_inner  # 48mm
+        expected = stack.total_housing_depth - stack.z_motor_plate_inner  # 51mm
 
         assert abs(z_size - expected) < 0.1, (
             f"Z extent {z_size:.2f}mm, expected {expected:.2f}mm"
@@ -508,7 +538,7 @@ class TestCadQuerySolid:
         """
         h = CFG.housing
         stack = CFG.stack_up
-        body_h = stack.z_output_cap - stack.z_motor_plate_inner  # 48mm
+        body_h = stack.total_housing_depth - stack.z_motor_plate_inner  # 51mm
         bore_r = h.bore_dia / 2.0  # 58mm
         housing_r = h.od / 2.0  # 67mm
         bearing_r = h.output_bearing_seat_dia / 2.0  # 45.075mm
@@ -527,3 +557,64 @@ class TestCadQuerySolid:
         assert vol < upper, (
             f"Volume {vol:.0f}mm³ above upper bound {upper:.0f}"
         )
+
+    def test_integral_lip_present_in_solid(self, body_solid):
+        """The bore must step 90.15→86.15 above the bearing seat — probe a ring at
+        r≈44mm (between the lip bore r=43.075 and the seat r=45.075): solid in the
+        lip zone, void in the bearing-seat zone.
+        """
+        import cadquery as cq
+
+        stack = CFG.stack_up
+        h = CFG.housing
+        seat_top = (
+            stack.input_clearance + stack.disc_thickness * 2
+            + stack.inter_disc_spacer + stack.output_clearance
+            + stack.output_bearing_total
+        )  # 48mm local (bearing-seat top / lip start)
+        body_height = stack.total_housing_depth - stack.z_motor_plate_inner  # 51mm
+        r_probe = (
+            (h.output_bearing_seat_dia - 2 * 2.0) / 2.0 + h.output_bearing_seat_dia / 2.0
+        ) / 2.0  # 44.075mm
+
+        def material_at(z_local):
+            box = (
+                cq.Workplane("XY")
+                .workplane(offset=z_local)
+                .center(r_probe, 0)
+                .box(1.0, 1.0, 0.5, centered=(True, True, False))
+            )
+            return body_solid.intersect(box).val().Volume()
+
+        lip_vol = material_at((seat_top + body_height) / 2.0)
+        seat_vol = material_at(seat_top - 3.0)
+        assert lip_vol > 0.1, "No material at lip radius in lip zone — retention lip missing"
+        assert seat_vol < 0.01, "Material at seat radius in bearing zone — seat bore blocked"
+
+    def test_output_nut_pockets_present(self, body_solid):
+        """Each output-face bolt location must have a hex nut pocket (not just a
+        through-hole): probe 3mm off the bolt axis, 1mm below the output face — inside
+        the hex (inradius 3.6mm) it must be void; a bare 2.2mm bolt hole would leave
+        it solid.
+        """
+        import cadquery as cq
+
+        stack = CFG.stack_up
+        h = CFG.housing
+        body_height = stack.total_housing_depth - stack.z_motor_plate_inner  # 51mm
+        bolt_r = h.bolt_circle_dia / 2.0
+        z_probe = body_height - 1.0
+        for a in compute_housing_bolt_angles(CFG):
+            cx = (bolt_r + 3.0) * math.cos(a)
+            cy = (bolt_r + 3.0) * math.sin(a)
+            box = (
+                cq.Workplane("XY")
+                .workplane(offset=z_probe)
+                .center(cx, cy)
+                .box(0.6, 0.6, 0.6, centered=(True, True, False))
+            )
+            vol = body_solid.intersect(box).val().Volume()
+            assert vol < 0.01, (
+                f"No nut pocket at bolt angle {math.degrees(a):.0f}° — "
+                f"material present where the hex pocket should be void"
+            )
