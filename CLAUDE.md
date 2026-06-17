@@ -399,3 +399,22 @@ export.py                # Export STEP + STL to export/
 - `uv run python assembly.py` — interactive 3D viewer
 - `uv run python export.py` — generate `export/step/` and `export/stl/`
 - Each `src/*.py` has an `if __name__ == "__main__"` block for standalone viewing
+
+### Development Workflow
+
+**Change policy — every change MUST update tests and docs.** A change is not complete
+until all three of the following are done:
+
+1. **Tests** — Add or update tests under `tests/` so the new or changed behavior is
+   covered. Each `src/` part has a matching `tests/test_*.py` (e.g. `output_hub.py` ↔
+   `tests/test_output_hub.py`), plus `tests/test_assembly_clearances.py` for
+   cross-part stack-up; mirror that layout.
+2. **Docs** — Update this `CLAUDE.md` (and any other `.md` files) so the spec, tables,
+   axial stack-up, tolerances, and notes reflect the change. Code and docs must never
+   drift out of sync.
+3. **Verify** — Run `uv run pytest tests/ -v` and confirm the full suite passes before
+   considering the change done.
+
+This applies to any change to the design parameters (`src/params.py`), part geometry,
+or the assembly — including dimension tweaks that ripple into the stack-up and
+clearance tables in this document.
