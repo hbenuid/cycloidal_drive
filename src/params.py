@@ -55,7 +55,7 @@ class DiscParams:
     output_pin_circle_dia: float = 60.0  # mm
     output_pin_dia: float = 4.0  # mm (4mm × 45mm h6 ground steel dowel, captured in blind hub holes)
     output_pin_length: float = 45.0  # mm, h6 ground steel dowel
-    output_pin_hole_dia: float = 8.0  # mm (4mm + 2*1.5mm ecc + 1mm clearance)
+    output_pin_hole_dia: float = 7.4  # mm (4mm + 2*1.5mm ecc + 0.4mm clearance; 0.2mm radial slack ≈ ±0.38° output backlash — practical floor for 4 rigid pins)
     lobe_chamfer: float = 1.0  # mm, 45° chamfer on outer epitrochoid edge (assembly lead-in, hides elephant foot)
 
 
