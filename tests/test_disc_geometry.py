@@ -501,6 +501,25 @@ class TestDiscFitment:
             f"Pin hole clearance {clearance:.2f}mm < 2*eccentricity {min_clearance}mm"
         )
 
+    def test_output_hole_backlash_budget(self):
+        """Output-pin-hole radial slack sets the drive's designed backlash.
+
+        Slack beyond the kinematic orbit requirement
+        (slack = hole_r - pin_r - e) is the lost motion at the output pins.
+        At the 30mm pin circle, 0.3mm slack is about +/-0.57 deg of output
+        backlash. Keep it in a band: too tight (<0.25mm) over-constrains the
+        4 rigid steel pins against printed-hole position error; too loose
+        (>0.35mm) re-grows backlash. The ring-pin mesh is a zero-clearance
+        theoretical epitrochoid, so this hole is the dominant designed source.
+        """
+        d = CFG.disc
+        e = CFG.gear.eccentricity
+        slack = d.output_pin_hole_dia / 2.0 - d.output_pin_dia / 2.0 - e
+        assert 0.25 <= slack <= 0.35, (
+            f"Output-hole radial slack {slack:.3f}mm outside 0.25-0.35mm "
+            f"backlash budget (hole {d.output_pin_hole_dia}mm)"
+        )
+
     def test_eccentric_shaft_seat_fits_6003_bore(self):
         """Shaft bearing seat OD must be >= 6003 bearing bore (light press)."""
         assert CFG.shaft.bearing_seat_od >= CFG.bearings.ecc_bore, (
@@ -605,8 +624,8 @@ class TestAssemblyMeshing:
             center_dist = math.hypot(pin_xy[0] - hole_xy[0],
                                      pin_xy[1] - hole_xy[1])
             margin = hole_r - pin_r - center_dist
-            assert margin >= 0.4, (
-                f"Pin {k}/disc-2 hole margin {margin:.2f}mm < 0.4mm"
+            assert margin >= 0.3 - 1e-6, (
+                f"Pin {k}/disc-2 hole margin {margin:.2f}mm < 0.3mm"
             )
 
 

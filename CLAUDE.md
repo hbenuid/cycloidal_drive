@@ -46,18 +46,20 @@
 | Output pin count | 4 | Equally spaced at 90° |
 | Output pin circle ⌀ | 60.00mm | — |
 | Output pin ⌀ | 4.00mm | 4mm × 45mm h6 ground steel dowel pin |
-| Disc pin hole ⌀ | 8.00mm | 4mm pin + 2 × 1.5mm ecc + 1mm clearance |
-| Pin hole approach | Oversized, no bearings | Greased sliding fit through discs (8mm); blind clearance holes in hub (4.20mm × 19mm deep), captured between closed hub ceiling and motor plate inner face |
+| Disc pin hole ⌀ | 7.60mm | 4mm pin + 2 × 1.5mm ecc + 0.6mm clearance (0.30mm radial slack — sized for low output backlash, see note below) |
+| Pin hole approach | Oversized, no bearings | Greased sliding fit through discs (7.6mm); blind clearance holes in hub (4.20mm × 19mm deep), captured between closed hub ceiling and motor plate inner face |
 
 **Clearance check — output pin holes:**
 
 - Pin hole center radius: 30.00mm
-- Pin hole edge (inner): 30.00 − 4.00 = 26.00mm from center
+- Pin hole edge (inner): 30.00 − 3.80 = 26.20mm from center
 - Center bore radius: 17.55mm
-- **Wall between bore and pin hole: 8.45mm** ✓
-- Pin hole edge (outer): 30.00 + 4.00 = 34.00mm from center
+- **Wall between bore and pin hole: 8.65mm** ✓
+- Pin hole edge (outer): 30.00 + 3.80 = 33.80mm from center
 - Disc lobe valley (approx inner radius): ~49mm from center
 - **Wall between pin hole and lobe root: ~15mm** ✓
+
+**Backlash (output lost motion):** the output-pin holes are the dominant *designed* backlash source — the ring-pin mesh (§8) is a zero-clearance theoretical epitrochoid, so it contributes ~0 lost motion on a nominal print. The hole carries **0.30mm of radial slack** beyond the kinematic orbit requirement (slack = hole_r − pin_r − e = 3.80 − 2.00 − 1.50), giving **≈ ±0.57° of output lost motion** at the 30mm pin circle (down from ±0.95° at the previous 8.00mm hole). Tightening further risks over-constraining the 4 rigid steel pins against printed-hole position error. Residual play beyond this comes from the hub pin fit (4.20mm), 6003 bearing radial clearance, and the 35.10mm disc center bore — none of which require reprinting the discs. Guarded by `test_output_hole_backlash_budget` in `tests/test_disc_geometry.py`.
 
 ### 1.4 Eccentric Shaft
 
@@ -170,7 +172,7 @@ Located in the output hub, supporting the eccentric shaft's free end via the 5mm
 | Type | Ground steel dowel pin, h6 |
 | Diameter | 4.00mm |
 | Length | 45mm |
-| Retained by | Friction in 4.20mm blind holes in output hub (4.20mm designed → ~4.00–4.10mm printed → light press on 4mm pin); closed hub ceiling above and motor plate inner face below act as backup capture; free-floating through disc 8mm clearance holes |
+| Retained by | Friction in 4.20mm blind holes in output hub (4.20mm designed → ~4.00–4.10mm printed → light press on 4mm pin); closed hub ceiling above and motor plate inner face below act as backup capture; free-floating through disc 7.6mm clearance holes |
 | Material | Hardened steel dowel pin |
 
 ### 3.4 Housing Bolts
@@ -290,7 +292,7 @@ In short: **everything ends up a press fit on a real print**; the offset just co
 | Bearing inner race → shaft/hub | −0.05 to −0.10mm on shaft ⌀ | Output hub through 6814 inner race |
 | Ring pin holes (motor plate) | +0.20mm on hole ⌀ (4.20mm) | 4mm pins, through-holes (slip-press as printed) |
 | Ring & output pin holes (gear body / hub) | +0.20mm on hole ⌀ (4.20mm) | 4mm pins, blind holes (slip-press as printed) |
-| Sliding / clearance fit | +0.20 to +0.30mm on hole ⌀ | Output pin holes in disc, disc center bore |
+| Sliding / clearance fit | +0.20 to +0.30mm on hole ⌀ | Disc center bore. **Disc output-pin holes are an exception** — modeled at nominal 7.6mm with no positive offset so PETG shrink *reduces* (not adds) output backlash; see §1.3 |
 | Motor shaft D-bore | +0.065mm on bore ⌀ (5.13mm for 5mm motor shaft) | Eccentric shaft D-bore receiving NEMA 17 shaft (slip-to-light press as printed) |
 | Support pin clearance bore | +0.075mm on bore ⌀ (5.15mm for 5mm pin) | Steel dowel pin hole in eccentric shaft output end (firm press as printed) |
 | General mating surfaces | +0.15mm clearance | Housing halves, spacers |
@@ -317,6 +319,7 @@ In short: **everything ends up a press fit on a real print**; the offset just co
 | Input speed (typical) | 200–500 RPM | |
 | Output speed | 10–25 RPM | |
 | Backdrivability | Not backdrivable | Inherent to cycloidal drives |
+| Output backlash | ~±0.57° (~1.1° total) | From 0.30mm output-pin-hole slack; ring mesh is zero-clearance (§1.3) |
 
 **Torque budget warning:** 5–6 Nm at the shoulder with 400mm reach is marginal for a 3-DOF arm. The arm structure, two additional joint motors, and wiring may consume most of the payload budget. This design is suitable for a lightweight demonstrator arm. For heavier payloads, consider upgrading to NEMA 23 or increasing the ratio.
 
