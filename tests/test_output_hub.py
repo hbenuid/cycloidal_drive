@@ -56,6 +56,28 @@ class TestOutputHubDimensions:
             f"{CFG.bearings.out_width}mm × {CFG.bearings.out_qty}"
         )
 
+    def test_proud_extension_is_5mm(self):
+        """Spec §5.3: the hub output face sits 5mm proud of the housing (z=65).
+
+        Guards the design value so a param drift shows up here rather than only
+        in the (parametric) geometry tests below.
+        """
+        stack = CFG.stack_up
+        hub = CFG.output_hub
+        assert hub.proud_above_housing == pytest.approx(5.0), (
+            f"proud_above_housing = {hub.proud_above_housing}mm, spec says 5.0mm"
+        )
+        hub_top_z = (
+            stack.z_output_bearings
+            + stack.output_bearing_total
+            + stack.output_wall
+            + hub.proud_above_housing
+        )
+        assert hub_top_z == pytest.approx(65.0), (
+            f"Hub top at z={hub_top_z}mm, spec says z=65mm "
+            f"(housing face {stack.total_housing_depth}mm + 5mm)"
+        )
+
     def test_shaft_bore_clears_spine(self):
         """Shaft clearance bore must be larger than eccentric shaft spine."""
         hub = CFG.output_hub
@@ -176,7 +198,7 @@ class TestCadQuerySolid:
         )
 
     def test_height(self, hub_solid):
-        """Z height = bearing grip + output wall + proud extension (25mm).
+        """Z height = bearing grip + output wall + proud extension (28mm).
 
         The hub rises past the housing so the arm-mount face is proud of the chassis.
         """
@@ -184,7 +206,7 @@ class TestCadQuerySolid:
         z_size = bb.zmax - bb.zmin
         stack = CFG.stack_up
         hub = CFG.output_hub
-        expected = stack.output_bearing_total + stack.output_wall + hub.proud_above_housing  # 25mm
+        expected = stack.output_bearing_total + stack.output_wall + hub.proud_above_housing  # 28mm
 
         assert abs(z_size - expected) < 0.1, (
             f"Z extent {z_size:.2f}mm, expected {expected:.2f}mm"
@@ -201,7 +223,7 @@ class TestCadQuerySolid:
         hub = CFG.output_hub
         # Solid is built at local Z; translated to z_output_bearings in the assembly.
         global_top = stack.z_output_bearings + bb.zmax
-        expected_top = stack.total_housing_depth + hub.proud_above_housing  # 60 + 2 = 62
+        expected_top = stack.total_housing_depth + hub.proud_above_housing  # 60 + 5 = 65
 
         assert abs(global_top - expected_top) < 0.1, (
             f"Output face at z={global_top:.2f}mm, expected {expected_top:.2f}mm "
@@ -346,7 +368,7 @@ class TestCadQuerySolid:
         h = CFG.housing
         hub_r = hub.od / 2.0
         bearing_grip = stack.output_bearing_total  # 20mm — shaft bore depth
-        height = bearing_grip + stack.output_wall + hub.proud_above_housing  # 25mm total
+        height = bearing_grip + stack.output_wall + hub.proud_above_housing  # 28mm total
         shaft_r = hub.shaft_clearance_bore / 2.0
 
         # Upper: full cylinder minus the shaft bore (only as deep as the grip zone)

@@ -153,7 +153,7 @@ class OutputHubParams:
 
     # Arm-link interface: output face protrudes past the chassis so the arm link
     # clears the stationary housing (housing output face is at total_housing_depth).
-    proud_above_housing: float = 2.0  # mm, output face protrudes this far past the housing output face (z=60); keeps a 2mm air gap clear of the housing
+    proud_above_housing: float = 5.0  # mm, output face protrudes this far past the housing output face (z=60); keeps a 5mm air gap clear of the housing
     arm_mount_bolt_circle_dia: float = 50.0  # mm, arm-link bolt circle (r=25, clears center + output pins)
     arm_mount_bolt_count: int = 4  # 4× M4 clearance holes (bolts thread into captive nuts)
     arm_mount_angle_offset_deg: float = 45.0  # offset from output pins (0/90/180/270) so nut pockets clear them
